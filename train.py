@@ -260,7 +260,7 @@ if __name__ == '__main__':
         # 'A_ch0_scalefactor' : 0.000425531914893617, # charge is scaled to ADC in MakeSimImages so use same scaling as ADC (values > 1 possible) 
         # 'A_ch1_scalefactor' : 0.0016666138905601323, # 1/600.019 for max X
         # 'B_ch0_scalefactor' : 0.000425531914893617, # 1/2350 for induction ([-2350, 1745])
-        'A_ch0_scalefactor' : 0.0002781641168289291, # Scale down the ND adc by max of the dataset for now
+        'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
         'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])
         'name' : "depos_X_4492_U_fsb_fixedbb_nu_tanhclamp_7",
         'gpu_ids' : [0],
