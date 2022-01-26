@@ -5,6 +5,7 @@
 *#
 
 depos_*
+checkpoints/nd_fd_*
 __pycache__/
 checkpoints/test/
 sample/
