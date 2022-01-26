@@ -67,7 +67,7 @@ class AlignedDataset():
             raise NotImplementedError('direction %s is not valid' % direction)
 
         # if self.opt.using_mask: # Keeping mask in the unused B channel
-        if self.opt.mask in ['saved', 'saved_1rms']:
+        if self.opt.mask_type in ['saved', 'saved_1rms']:
             full_mask = B[1:, :, :]
         else:
             full_mask = np.zeros((1, B.shape[1], B.shape[2])) # Can't be bothered to refactor out the mask object when not in the data so have this.
