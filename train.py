@@ -240,7 +240,7 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
 if __name__ == '__main__':
     options = {
-        'dataroot' : '/state/partition1/awilkins/depos_X_4492_U_fsb_fixedbb_nu',
+        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_1-8',
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
         'samples' : 1, # 0 to do samples = ticks//512
         'mask_type' : 'auto', # 'auto', 'saved', 'none'. 'none_weighted', 'saved_1rms'
@@ -262,7 +262,7 @@ if __name__ == '__main__':
         # 'B_ch0_scalefactor' : 0.000425531914893617, # 1/2350 for induction ([-2350, 1745])
         'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
         'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])
-        'name' : "depos_X_4492_U_fsb_fixedbb_nu_tanhclamp_7",
+        'name' : "nd_fd_radi_1-8_1",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
         'input_nc' :  1,
@@ -286,7 +286,7 @@ if __name__ == '__main__':
         'save_latest_freq' : 4000,
         'save_epoch_freq' : 2,
         'phase' : 'train',
-        'n_epochs' : 10,
+        'n_epochs' : 7,
         'n_epochs_decay' : 7,
         'beta1' : 0.5,
         # 'lamda_L1_reg' : 0.005, # 0 for no L1 regularisation
@@ -299,7 +299,7 @@ if __name__ == '__main__':
         'isTrain' : True,
         'lambda_pix' : 1000, # 1000
         'nonzero_L1weight': 10, # used for none_weighted mask type
-        'lambda_channel' : 200, # 20
+        'lambda_channel' : 20, # 20
         'G_output_layer' : 'tanh+clampcollection', # 'identity', 'tanh', 'linear', 'relu', 'tanh+clampcollection', 'tanh+clampinduction'
         'direction' : 'AtoB',
         'collection_crop' : False,
