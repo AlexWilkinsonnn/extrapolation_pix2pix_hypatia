@@ -6,7 +6,7 @@ from matplotlib.lines import Line2D
 
 plt.rc('font', family='serif')
 
-def plot_images(realA, realB, fakeB):
+def plot_images(realA, realB, fakeB, auto_crop):
     adc_max = max([np.amax(realB[0]), np.amax(fakeB[0])])
     adc_min = min([np.amin(realB[0]), np.amin(fakeB[0])])
     adc_abs_max = np.abs(adc_max) if np.abs(adc_max) > np.abs(adc_min) else np.abs(adc_min)
@@ -16,11 +16,6 @@ def plot_images(realA, realB, fakeB):
     fakeB = fakeB[0]
     realA = np.ma.masked_where(realA == 0, realA)
 
-    fig, ax = plt.subplots(1, 3)
-
-    ax[0].imshow(realA.T, cmap='viridis', aspect='auto', interpolation='none')
-    ax[0].set_title("realA")
-
     if realA.shape[0] == 480:
         cmap = 'viridis'
         vmin, vmax = adc_min, adc_max
@@ -28,19 +23,45 @@ def plot_images(realA, realB, fakeB):
         cmap = 'seismic'
         vmin, vmax = -adc_abs_max, adc_abs_max
 
-    ax[1].imshow(fakeB.T, cmap=cmap, aspect='auto', interpolation='none', vmin=vmin, vmax=vmax)
+    if auto_crop:
+        non_zeros = np.nonzero(realA)
+        ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
+        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < 480 else 480
+        tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
+        tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < 4492 else 4492
+        realA = realA[ch_min:ch_max, tick_min:tick_max]
+        realB = realB[ch_min:ch_max, tick_min:tick_max]
+        fakeB = fakeB[ch_min:ch_max, tick_min:tick_max]
+        print("ch_min={}, cm_max={}, tick_min={}, tick_max={}".format(ch_min, ch_max, tick_min, tick_max))
+
+    fig, ax = plt.subplots(1, 3)
+
+    ax[0].imshow(realA.T, cmap='viridis', aspect='auto', interpolation='none', origin='lower')
+    ax[0].set_title("realA")
+
+    ax[1].imshow(fakeB.T, cmap=cmap, aspect='auto', interpolation='none', vmin=vmin, vmax=vmax, origin='lower')
     ax[1].set_title("fakeB")
 
-    ax[2].imshow(realB.T, cmap=cmap, aspect='auto', interpolation='none', vmin=vmin, vmax=vmax)
+    ax[2].imshow(realB.T, cmap=cmap, aspect='auto', interpolation='none', vmin=vmin, vmax=vmax, origin='lower')
     ax[2].set_title("realB")
 
     fig.tight_layout()
     plt.show()
 
-def plot_channel_trace(realA, realB, fakeB):
+def plot_channel_trace(realA, realB, fakeB, auto_crop):
     realA = realA[0]
     realB = realB[0]
     fakeB = fakeB[0]
+
+    if auto_crop:
+        non_zeros = np.nonzero(realA)
+        ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
+        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < 480 else 480
+        tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
+        tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < 4492 else 4492
+        realA = realA[ch_min:ch_max, tick_min:tick_max]
+        realB = realB[ch_min:ch_max, tick_min:tick_max]
+        fakeB = fakeB[ch_min:ch_max, tick_min:tick_max]
         
     ch = (0, 0)
     for idx, col in enumerate(realA):
@@ -70,7 +91,7 @@ def plot_channel_trace(realA, realB, fakeB):
 
     plt.show()
 
-def main(input_dir, VALID_IMAGES, N):
+def main(input_dir, VALID_IMAGES, N, AUTO_CROP):
     if VALID_IMAGES:
         if N == 5:
             suffixes = ["valid0.npy", "valid1.npy", "valid2.npy","valid3.npy", "valid4.npy"]
@@ -101,8 +122,8 @@ def main(input_dir, VALID_IMAGES, N):
                 fakeB = fakeB[:,112:-112,58:-58]
             """
 
-            plot_images(realA, realB, fakeB)
-            plot_channel_trace(realA, realB, fakeB)
+            plot_images(realA, realB, fakeB, AUTO_CROP)
+            plot_channel_trace(realA, realB, fakeB, AUTO_CROP)
 
     else:
         realA = np.load(os.path.join(input_dir, "realA.npy"))
@@ -124,8 +145,8 @@ def main(input_dir, VALID_IMAGES, N):
             realB = realB[:,112:-112,58:-58]
             fakeB = fakeB[:,112:-112,58:-58]
 
-        plot_images(realA, realB, fakeB)
-        plot_channel_trace(realA, realB, fakeB)
+        plot_images(realA, realB, fakeB, AUTO_CROP)
+        plot_channel_trace(realA, realB, fakeB, AUTO_CROP)
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -137,10 +158,11 @@ def parse_arguments():
     group.add_argument("--training", dest='TRAIN_IMAGES', action='store_true')
 
     parser.add_argument("-n", type=int, default=3, dest='N')
+    parser.add_argument("--auto_crop", action='store_true')
 
     args = parser.parse_args()
 
-    return (args.input_dir, args.VALID_IMAGES, args.N)
+    return (args.input_dir, args.VALID_IMAGES, args.N, args.auto_crop)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
