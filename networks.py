@@ -289,29 +289,24 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
             # input_chs, output_chs, target_chs = input_[0][0][active_mask, :], output[0][0][active_mask, :], target[0][0][active_mask, :]
             input_chs, output_chs, target_chs = input_[0][0][:, :], output[0][0][:, :], target[0][0][:, :]
 
-            # right_roll10 = target_chs.roll(10, 1)
-            # right_roll10[:, :10] = 0
-            # left_roll10 = target_chs.roll(-10, 1)
-            # left_roll10[:, -10:] = 0
-            # right_roll20 = target_chs.roll(20, 1)
-            # right_roll20[:, :20] = 0
-            # left_roll20 = target_chs.roll(-20, 1)
-            # left_roll20[:, -20:] = 0
-            right_roll10 = target_chs.roll(5, 1)
+            right_roll5 = target_chs.roll(5, 1)
+            right_roll5[:, :5] = 5*B_ch0_scalefactor
+            left_roll5 = target_chs.roll(-5, 1)
+            left_roll5[:, -5:] = 5*B_ch0_scalefactor
+            peak_mask = target_chs + right_roll5 + left_roll5
+            right_roll10 = target_chs.roll(10, 1)
             right_roll10[:, :10] = 5*B_ch0_scalefactor
-            left_roll10 = target_chs.roll(-5, 1)
+            left_roll10 = target_chs.roll(-10, 1)
             left_roll10[:, -10:] = 5*B_ch0_scalefactor
-            # right_roll20 = target_chs.roll(10, 1)
-            # right_roll20[:, :20] = 0
-            # left_roll20 = target_chs.roll(-10, 1)
-            # left_roll20[:, -20:] = 0
-            peak_mask = target_chs + right_roll10 + left_roll10# + left_roll20 + right_roll20 # Smearing the adc to find regions with peaks.
+            peak_mask = peak_mask + right_roll10 + left_roll10
+
             roll1 = target_chs.roll(1, 0)
             roll1[:1] = 5*B_ch0_scalefactor
             roll2 = target_chs.roll(-1, 0)
             roll2[-1:] = 5*B_ch0_scalefactor
             peak_mask = peak_mask + roll1 + roll2
-            peak_mask = (peak_mask > (40*B_ch0_scalefactor)) # 40
+
+            peak_mask = (peak_mask > (65*B_ch0_scalefactor))
 
             if peak_mask.sum() == 0:
                 return 0, 0
