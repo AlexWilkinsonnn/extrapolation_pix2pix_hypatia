@@ -3,10 +3,11 @@ import argparse, os
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.backends.backend_pdf import PdfPages
 
 plt.rc('font', family='serif')
 
-def plot_images(realA, realB, fakeB, auto_crop):
+def plot_images(realA, realB, fakeB, auto_crop, pdf):
     adc_max = max([np.amax(realB[0]), np.amax(fakeB[0])])
     adc_min = min([np.amin(realB[0]), np.amin(fakeB[0])])
     adc_abs_max = np.abs(adc_max) if np.abs(adc_max) > np.abs(adc_min) else np.abs(adc_min)
@@ -34,7 +35,10 @@ def plot_images(realA, realB, fakeB, auto_crop):
         fakeB = fakeB[ch_min:ch_max, tick_min:tick_max]
         print("ch_min={}, cm_max={}, tick_min={}, tick_max={}".format(ch_min, ch_max, tick_min, tick_max))
 
-    fig, ax = plt.subplots(1, 3)
+    if type(pdf) == PdfPages:
+        fig, ax = plt.subplots(1, 3, figsize=(12,6))
+    else:
+        fig, ax = plt.subplots(1, 3)
 
     ax[0].imshow(realA.T, cmap='viridis', aspect='auto', interpolation='none', origin='lower')
     ax[0].set_title("realA")
@@ -46,9 +50,12 @@ def plot_images(realA, realB, fakeB, auto_crop):
     ax[2].set_title("realB")
 
     fig.tight_layout()
-    plt.show()
+    if type(pdf) == PdfPages:
+        pdf.savefig(bbox_inches='tight')
+    else:
+        plt.show()
 
-def plot_channel_trace(realA, realB, fakeB, auto_crop):
+def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf):
     realA = realA[0]
     realB = realB[0]
     fakeB = fakeB[0]
@@ -73,12 +80,15 @@ def plot_channel_trace(realA, realB, fakeB, auto_crop):
     tick_adc_fake = fakeB[ch,:]
     tick_adc_in = realA[ch,:]
     ticks = np.arange(1, realA.shape[1] + 1)
-    
-    fig, ax = plt.subplots()
+
+    if type(pdf) == PdfPages:
+        fig, ax = plt.subplots(figsize=(12,4))
+    else:
+        fig, ax = plt.subplots()    
 
     ax.hist(ticks, bins=len(ticks), weights=tick_adc_true, histtype='step', label="Ground Truth (FD ADC)", linewidth=0.8, color='#E69F00')
     ax.hist(ticks, bins=len(ticks), weights=tick_adc_fake, histtype='step', label="Output (FD ADC)", linewidth=0.8, color='#56B4E9')
-    ax.hist(ticks, bins=len(ticks), weights=tick_adc_in, histtype='step', label="Input (FD ADC)", linewidth=0.8, color='#009E73')
+    ax.hist(ticks, bins=len(ticks), weights=tick_adc_in, histtype='step', label="Input (ND ADC)", linewidth=0.8, color='#009E73')
     ax.set_ylabel("ADC", fontsize=14)        
     ax.set_xlabel("Tick", fontsize=14)
     ax.set_xlim(1, realA.shape[1] + 1)
@@ -89,9 +99,17 @@ def plot_channel_trace(realA, realB, fakeB, auto_crop):
     new_handles = [Line2D([], [], c=h.get_edgecolor()) for h in handles]
     plt.legend(handles=new_handles, labels=labels, prop={'size': 12})
 
-    plt.show()
+    if type(pdf) == PdfPages:
+        pdf.savefig(bbox_inches='tight')
+    else:
+        plt.show()
 
-def main(input_dir, VALID_IMAGES, N, AUTO_CROP):
+def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF):
+    if PDF:
+        pdf = PdfPages('out.pdf')
+    else:
+        pdf = False
+
     if VALID_IMAGES:
         if N == 5:
             suffixes = ["valid0.npy", "valid1.npy", "valid2.npy","valid3.npy", "valid4.npy"]
@@ -122,8 +140,11 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP):
                 fakeB = fakeB[:,112:-112,58:-58]
             """
 
-            plot_images(realA, realB, fakeB, AUTO_CROP)
-            plot_channel_trace(realA, realB, fakeB, AUTO_CROP)
+            plot_images(realA, realB, fakeB, AUTO_CROP, pdf)
+            plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf)
+
+        if PDF:
+            pdf.close()
 
     else:
         realA = np.load(os.path.join(input_dir, "realA.npy"))
@@ -145,8 +166,12 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP):
             realB = realB[:,112:-112,58:-58]
             fakeB = fakeB[:,112:-112,58:-58]
 
-        plot_images(realA, realB, fakeB, AUTO_CROP)
-        plot_channel_trace(realA, realB, fakeB, AUTO_CROP)
+        plot_images(realA, realB, fakeB, AUTO_CROP, pdf)
+        plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf)
+
+        if PDF:
+            pdf.close()
+    
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -159,10 +184,11 @@ def parse_arguments():
 
     parser.add_argument("-n", type=int, default=3, dest='N')
     parser.add_argument("--auto_crop", action='store_true')
+    parser.add_argument("--pdf", action='store_true')
 
     args = parser.parse_args()
 
-    return (args.input_dir, args.VALID_IMAGES, args.N, args.auto_crop)
+    return (args.input_dir, args.VALID_IMAGES, args.N, args.auto_crop, args.pdf)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
