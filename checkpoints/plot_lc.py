@@ -6,7 +6,14 @@ import yaml
 
 plt.rc('font', family='serif')
 
-def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID):
+def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID, DATASET):
+    if DATASET == 0:
+        train_size = 8000
+        valid_freq = 4000
+    elif DATASET == 1:
+        train_size = 20000
+        valid_freq = 10000
+
     with open(os.path.join(input_dir, "loss.txt"), 'r') as f:
         lines = f.readlines()
 
@@ -88,11 +95,11 @@ def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID):
     G_pix_valid_min, G_pix_valid_min_idx = min((val, idx) for (idx, val) in enumerate(G_pix_valid))
     G_channel_valid_min, G_channel_valid_min_idx = min((val, idx) for (idx, val) in enumerate(G_channel_valid))
     print("G_pix_valid={}".format(G_pix_valid))
-    print("min(G_pix_valid)={} at {} iter -> {} epoch assuming 8000 iter to an epoch + valid every 4000 iter".format(
-        G_pix_valid_min, (G_pix_valid_min_idx + 1)*4000, (G_pix_valid_min_idx + 1)*4000/8000))
+    print("min(G_pix_valid)={} at {} iter -> {} epoch assuming {} iter to an epoch + valid every {} iter".format(
+        G_pix_valid_min, (G_pix_valid_min_idx + 1)*valid_freq, (G_pix_valid_min_idx + 1)*valid_freq/train_size, train_size, valid_freq))
     print("G_channel_valid={}".format(G_channel_valid))
-    print("min(G_channel_valid)={} at {} iter -> {} epoch assuming 8000 iter to an epoch + valid every 4000 iter".format(
-        G_channel_valid_min, (G_channel_valid_min_idx + 1)*4000, (G_channel_valid_min_idx + 1)*4000/8000))
+    print("min(G_channel_valid)={} at {} iter -> {} epoch assuming {} iter to an epoch + valid every {} iter".format(
+        G_channel_valid_min, (G_channel_valid_min_idx + 1)*valid_freq, (G_channel_valid_min_idx + 1)*valid_freq/train_size, train_size, valid_freq))
     
     if os.path.isfile(os.path.join(input_dir, 'best_metrics.yaml')):
         with open(os.path.join(input_dir, 'best_metrics.yaml')) as f:
@@ -102,9 +109,9 @@ def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID):
             if key.endswith("itr"):
                 continue
             if type(value) is tuple:
-                print("{: >25}: {: >21}, {: >21} at {: >20} itr {: >6} epochs".format(key, value[0], value[1], best_metrics[key + '_itr'], str(round(best_metrics[key + '_itr']/8000, 2))))
+                print("{: >25}: {: >21}, {: >21} at {: >20} itr {: >6} epochs".format(key, value[0], value[1], best_metrics[key + '_itr'], str(round(best_metrics[key + '_itr']/train_size, 2))))
             else:
-                print("{: >25}: {: >44} at {: >20} itr {: >6} epochs".format(key, value, best_metrics[key + '_itr'], str(round(best_metrics[key + '_itr']/8000, 2))))
+                print("{: >25}: {: >44} at {: >20} itr {: >6} epochs".format(key, value, best_metrics[key + '_itr'], str(round(best_metrics[key + '_itr']/train_size, 2))))
             
     fig, ax = plt.subplots(figsize=(16,8))
 
@@ -160,10 +167,11 @@ def parse_arguments():
     parser.add_argument("--validation", action='store_true', dest='VALID', help="must be using iter")
     parser.add_argument("--iter", type=int, dest='ITER', default=0,
         help="get losses every n iterations instead of every epoch")
+    parser.add_argument("--dataset", type=int, default=0, help="Which iteration of the dataset is being used")
 
     args = parser.parse_args()
 
-    return (args.input_dir, args.CH_LOSS, args.OLD_L1, args.ITER, args.VALID)
+    return (args.input_dir, args.CH_LOSS, args.OLD_L1, args.ITER, args.VALID, args.dataset)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
