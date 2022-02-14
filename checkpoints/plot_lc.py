@@ -13,6 +13,9 @@ def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID, DATASET):
     elif DATASET == 1:
         train_size = 20000
         valid_freq = 10000
+    elif DATASET == 2:
+        train_size = 19000
+        valid_freq = 9500
 
     with open(os.path.join(input_dir, "loss.txt"), 'r') as f:
         lines = f.readlines()
