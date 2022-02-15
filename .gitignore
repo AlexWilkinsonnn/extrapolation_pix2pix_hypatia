@@ -11,3 +11,4 @@ checkpoints/test/
 sample/
 tscripts/
 jobs/mean_rms.txt
+results/nd_fd_*

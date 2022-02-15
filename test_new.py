@@ -16,7 +16,7 @@ from networks import CustomLoss, CustomLossHitBiasEstimator
 plt.rc('font', family='serif')
 
 def main(opt):
-    out_dir = os.path.join('/home/awilkins/pix2pix/results', opt.name)
+    out_dir = os.path.join('/home/awilkins/extrapolation_pix2pix/results', opt.name)
     
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -106,9 +106,9 @@ def main(opt):
             fakeB = fakeB[0, 0].numpy().astype(int)
 
             # if i == 14:
-            #     np.save('/home/awilkins/pix2pix/sample/realA_Z_example.npy', realA)
-            #     np.save('/home/awilkins/pix2pix/sample/realB_Z_example.npy', realB)
-            #     np.save('/home/awilkins/pix2pix/sample/fakeB_Z_example.npy', fakeB)
+            #     np.save('/home/awilkins/extrapolation_pix2pix/sample/realA_Z_example.npy', realA)
+            #     np.save('/home/awilkins/extrapolation_pix2pix/sample/realB_Z_example.npy', realB)
+            #     np.save('/home/awilkins/extrapolation_pix2pix/sample/fakeB_Z_example.npy', fakeB)
             #     sys.exit()
             
             fig, ax = plt.subplots(1, 2, figsize=(16, 8))
@@ -341,7 +341,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/pix2pix/checkpoints/depos_X_4492_U_fsb_fixedbb_nu_tanhclamp_4'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_8'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
