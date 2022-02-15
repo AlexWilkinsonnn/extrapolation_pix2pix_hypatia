@@ -506,6 +506,9 @@ class UnetGenerator(nn.Module):
         if kernel_size == 4 and outer_stride == 2 and inner_stride_1 == 2:
             paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
             output_paddings = { 'inner' : 0, 'outer' : 0, 'in1' : 0 }
+        if kernel_size == 3 and outer_stride == 2 and inner_stride_1 == 2:
+            paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
+            output_paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
         elif kernel_size == (3,5) and outer_stride == 2 and inner_stride_1 == 2:
             paddings = { 'inner' : (1,2), 'outer' : (1,2), 'in1' : (1,2) }
             output_paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
@@ -694,7 +697,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
     def forward(self, x):
         # print("x.size()={}".format(x.size()))
-#        print("self.model(x)={}".format(self.model(x).size()))
+        # print("self.model(x)={}".format(self.model(x).size()))
         if self.outermost:
             return self.model(x)
 
