@@ -765,8 +765,14 @@ class ResnetGenerator(nn.Module):
         elif output_layer == 'identity':
             model += [nn.Identity()]
 
+        elif output_layer == 'tanh+clampcollection':
+            model += [nn.Tanh(), CustomClampLayer(-0.28169014084507044, 1)] # [-900, 3195]
+
+        elif output_layer == 'tanh+clampinduction':
+            model += [nn.Tanh(), CustomClampLayer(-1, 0.7425531914893617)] # [-2350, 1745]
+
         elif output_layer == 'relu':
-            up = [uprelu, upconv, nn.ReLU(True)]
+            up = [nn.ReLU(True)]
 
         else:
             raise NotImplementedError('output_layer %s not implemented' % output_layer)
