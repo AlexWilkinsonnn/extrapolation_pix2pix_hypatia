@@ -178,7 +178,7 @@ def main(opt):
 
             ax2 = ax.twinx()
             ax2.hist(ticks, bins=len(ticks), weights=realA[ch,start_tick:end_tick], histtype='step', label='ND ADC', linewidth=0.7, color='g')
-            ax2.set_ylabel("charge", fontsize=14)
+            ax2.set_ylabel("ND adc", fontsize=14)
 
             ax_ylims = ax.axes.get_ylim()
             ax_yratio = ax_ylims[0] / ax_ylims[1]
@@ -296,15 +296,15 @@ def main(opt):
         end_tick = np.nonzero(realA[ch, :])[0][-1] + 200  if np.nonzero(realA[ch, :])[0][-1] < 4292 else 4292
         ticks = np.arange(start_tick + 1, end_tick + 1)
 
-        ax.hist(ticks, bins=len(ticks), weights=realB[ch,start_tick:end_tick], histtype='step', label='real_adc', linewidth=0.7, color='r')
-        ax.hist(ticks, bins=len(ticks), weights=fakeB[ch,start_tick:end_tick], histtype='step', label='fake_adc', linewidth=0.7, color='b')
-        ax.set_ylabel("adc", fontsize=14)
+        ax.hist(ticks, bins=len(ticks), weights=realB[ch,start_tick:end_tick], histtype='step', label='real FD adc', linewidth=0.7, color='r')
+        ax.hist(ticks, bins=len(ticks), weights=fakeB[ch,start_tick:end_tick], histtype='step', label='output FD _adc', linewidth=0.7, color='b')
+        ax.set_ylabel("FD adc", fontsize=14)
         ax.set_xlabel("tick", fontsize=14)
         ax.set_xlim(start_tick + 1, end_tick + 1)
 
         ax2 = ax.twinx()
-        ax2.hist(ticks, bins=len(ticks), weights=realA[ch,start_tick:end_tick], histtype='step', label='charge', linewidth=0.7, color='g')
-        ax2.set_ylabel("charge", fontsize=14)
+        ax2.hist(ticks, bins=len(ticks), weights=realA[ch,start_tick:end_tick], histtype='step', label='ND adc', linewidth=0.7, color='g')
+        ax2.set_ylabel("ND adc", fontsize=14)
 
         ax_ylims = ax.axes.get_ylim()
         ax_yratio = ax_ylims[0] / ax_ylims[1]
