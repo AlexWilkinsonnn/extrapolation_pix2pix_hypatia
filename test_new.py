@@ -111,7 +111,10 @@ def main(opt):
             #     np.save('/home/awilkins/extrapolation_pix2pix/sample/fakeB_Z_example.npy', fakeB)
             #     sys.exit()
             
-            fig, ax = plt.subplots(1, 2, figsize=(16, 8))
+            if include_realA:
+                fig, ax = plt.subplots(1, 3, figsize=(24, 8))
+            else:
+                fig, ax = plt.subplots(1, 2, figsize=(16, 8))
 
             adc_max = max([realB.max(), fakeB.max()])
             adc_min = min([realB.min(), fakeB.min()])
@@ -123,14 +126,32 @@ def main(opt):
                 vmax = adc_max
                 vmin = adc_min
                 cmap = 'viridis'
+                
+            # auto-cropping.
+            non_zeros = np.nonzero(realA)
+            ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
+            ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < 480 else 480
+            tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
+            tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < 4492 else 4492
+            realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
+            realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
+            fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
 
-            ax[0].imshow(realB[50:330,2250:3900].T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+            ax[0].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
             ax[0].set_title("Truth", fontsize=16)
-            # ax[0].set_title("Near Detector", fontsize=16)
 
-            ax[1].imshow(fakeB[50:330,2250:3900].T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+            ax[1].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
             ax[1].set_title("Output", fontsize=16)
-            # ax[1].set_title("Far Detector", fontsize=16)
+
+            if include_realA:
+                ax[0].imshow(np.ma.masked_where(realA_cropped == 0, realA_cropped).T, interpolation='none', aspect='auto', cmap='viridis', origin='lower')
+                ax[0].set_title("Input", fontsize=16)
+                
+                ax[1].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+                ax[1].set_title("Truth", fontsize=16)
+                
+                ax[2].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+                ax[2].set_title("Output", fontsize=16)
 
             for a in ax: a.set_axis_off()
 
@@ -149,14 +170,14 @@ def main(opt):
             end_tick = np.nonzero(realA[ch, :])[0][-1] + 200  if np.nonzero(realA[ch, :])[0][-1] < 4292 else 4292
             ticks = np.arange(start_tick + 1, end_tick + 1)
 
-            ax.hist(ticks, bins=len(ticks), weights=realB[ch,start_tick:end_tick], histtype='step', label='real_adc', linewidth=0.7, color='r')
-            ax.hist(ticks, bins=len(ticks), weights=fakeB[ch,start_tick:end_tick], histtype='step', label='fake_adc', linewidth=0.7, color='b')
+            ax.hist(ticks, bins=len(ticks), weights=realB[ch,start_tick:end_tick], histtype='step', label='real FD adc', linewidth=0.7, color='r')
+            ax.hist(ticks, bins=len(ticks), weights=fakeB[ch,start_tick:end_tick], histtype='step', label='output FD adc', linewidth=0.7, color='b')
             ax.set_ylabel("adc", fontsize=14)
             ax.set_xlabel("tick", fontsize=14)
             ax.set_xlim(start_tick + 1, end_tick + 1)
 
             ax2 = ax.twinx()
-            ax2.hist(ticks, bins=len(ticks), weights=realA[ch,start_tick:end_tick], histtype='step', label='charge', linewidth=0.7, color='g')
+            ax2.hist(ticks, bins=len(ticks), weights=realA[ch,start_tick:end_tick], histtype='step', label='ND ADC', linewidth=0.7, color='g')
             ax2.set_ylabel("charge", fontsize=14)
 
             ax_ylims = ax.axes.get_ylim()
@@ -226,7 +247,10 @@ def main(opt):
         realB = realB[0, 0].numpy().astype(int)
         fakeB = fakeB[0, 0].numpy().astype(int)
 
-        fig, ax = plt.subplots(1, 2, figsize=(16, 8))
+        if include_realA:
+            fig, ax = plt.subplots(1, 3, figsize=(24, 8))
+        else:
+            fig, ax = plt.subplots(1, 2, figsize=(16, 8))
 
         adc_max = max([realB.max(), fakeB.max()])
         adc_min = min([realB.min(), fakeB.min()])
@@ -244,6 +268,16 @@ def main(opt):
 
         ax[1].imshow(fakeB.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax)
         ax[1].set_title("Output L1={}".format(loss_pix), fontsize=12)
+
+        if include_realA:
+            ax[0].imshow(np.ma.masked_where(realA_cropped == 0, realA_cropped).T, interpolation='none', aspect='auto', cmap='viridis', origin='lower')
+            ax[0].set_title("Input", fontsize=16)
+            
+            ax[1].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+            ax[1].set_title("Truth", fontsize=16)
+            
+            ax[2].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+            ax[2].set_title("Output", fontsize=16)
 
         for a in ax: a.set_axis_off()
 
@@ -341,7 +375,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_8'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_9'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
@@ -351,7 +385,7 @@ if __name__ == '__main__':
     options['num_threads'] = 1
     options['phase'] = 'test'
     options['isTrain'] = False
-    options['epoch'] = 'bias_good_mu_best_sigma' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    options['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     # if options['mask_type'] == 'none_weighted' or options['mask_type'] == 'saved_1rms':
     #     print("How do I want to compare L1 losses for models trained with none_weigthed and saved_time?")
@@ -359,6 +393,8 @@ if __name__ == '__main__':
 
     # if 'lambda_L1_reg' not in options:
     #     options['lambda_L1_reg'] = 0
+
+    include_realA = True
 
     if 'adam_weight_decay' not in options:
         options['adam_weight_decay'] = 0
@@ -376,7 +412,7 @@ if __name__ == '__main__':
     if 'rms' not in options:
         options['rms'] = 0
 
-    half_precision = True
+    half_precision = False
     if half_precision:
         print("###########################################\n" + 
             "Using FP16" +
