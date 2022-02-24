@@ -137,12 +137,6 @@ def main(opt):
             realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
             fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
 
-            ax[0].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
-            ax[0].set_title("Truth", fontsize=16)
-
-            ax[1].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
-            ax[1].set_title("Output", fontsize=16)
-
             if include_realA:
                 ax[0].imshow(np.ma.masked_where(realA_cropped == 0, realA_cropped).T, interpolation='none', aspect='auto', cmap='viridis', origin='lower')
                 ax[0].set_title("Input", fontsize=16)
@@ -152,6 +146,12 @@ def main(opt):
                 
                 ax[2].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
                 ax[2].set_title("Output", fontsize=16)
+            else:
+                ax[0].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+                ax[0].set_title("Truth", fontsize=16)
+                
+                ax[1].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+                ax[1].set_title("Output", fontsize=16)
 
             for a in ax: a.set_axis_off()
 
@@ -263,21 +263,21 @@ def main(opt):
             vmin = adc_min
             cmap = 'viridis'
 
-        ax[0].imshow(realB.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax)
-        ax[0].set_title("Truth", fontsize=16)
-
-        ax[1].imshow(fakeB.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax)
-        ax[1].set_title("Output L1={}".format(loss_pix), fontsize=12)
-
         if include_realA:
             ax[0].imshow(np.ma.masked_where(realA_cropped == 0, realA_cropped).T, interpolation='none', aspect='auto', cmap='viridis', origin='lower')
             ax[0].set_title("Input", fontsize=16)
-            
+                
             ax[1].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
             ax[1].set_title("Truth", fontsize=16)
-            
+                
             ax[2].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
             ax[2].set_title("Output", fontsize=16)
+        else:
+            ax[0].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+            ax[0].set_title("Truth", fontsize=16)
+            
+            ax[1].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
+            ax[1].set_title("Output", fontsize=16)
 
         for a in ax: a.set_axis_off()
 
