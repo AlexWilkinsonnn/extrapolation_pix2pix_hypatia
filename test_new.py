@@ -21,7 +21,7 @@ def main(opt):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    dataset_test = CustomDatasetDataLoader(opt, valid=True).load_data()
+    dataset_test = CustomDatasetDataLoader(opt, valid=True, nd_ped=nd_ped).load_data()
     dataset_test_size = len(dataset_test)
     print("Number of test images={}".format(dataset_test_size))
 
@@ -375,12 +375,15 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_9'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_10'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
 
     options['gpu_ids'] = [0]
+    # For resnet dropout is in the middle of a sequential so needs to be commented out to maintain layer indices
+    # For for unet its at the end so can remove it and still load the state_dict (nn.Dropout has no weights so
+    # we don't get an unexpected key error when doing this)
     options['no_dropout'] = True
     options['num_threads'] = 1
     options['phase'] = 'test'
@@ -395,6 +398,9 @@ if __name__ == '__main__':
     #     options['lambda_L1_reg'] = 0
 
     include_realA = True
+    
+    # True if checkpoint was using nd_fd_radi_1-8_vtxaligned before the nd ped was subtracted
+    nd_ped = True
 
     if 'adam_weight_decay' not in options:
         options['adam_weight_decay'] = 0

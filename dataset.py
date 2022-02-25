@@ -13,7 +13,7 @@ class AlignedDataset():
     It assumes that the directory '/path/to/data/train' contains image pairs in the form of {A,B}.
     During test time, you need to prepare a directory '/path/to/data/test'.
     """
-    def __init__(self, opt, valid=False):
+    def __init__(self, opt, valid=False, nd_ped=False):
         """Initialize this dataset class.
 
         Parameters:
@@ -31,6 +31,8 @@ class AlignedDataset():
         self.AB_paths = sorted(make_dataset(self.dir_AB, opt.max_dataset_size))  # get image paths
         self.input_nc = self.opt.input_nc
         self.output_nc = self.opt.output_nc
+
+        self.nd_ped = nd_ped
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -116,6 +118,10 @@ class AlignedDataset():
         #     noise = torch.randn((1,512,512))
         #     A = torch.cat((A, noise), 0)
         
+        # Adding back on nd ped for legacy
+        if self.nd_ped:
+            A[A != 0] += 74.0 
+        
         return {'A': A, 'B': B, 'A_paths': AB_path, 'B_paths': AB_path, 'mask' : mask}
 
     def __len__(self):
@@ -138,14 +144,14 @@ def make_dataset(dir, max_dataset_size=float("inf")):
 
 class CustomDatasetDataLoader():
     """Wrapper class of Dataset class that performs multi-threaded data loading"""
-    def __init__(self, opt, valid=False):
+    def __init__(self, opt, valid=False, nd_ped=False):
         """Initialize this class
 
         Step 1: create a dataset instance given the name [dataset_mode]
         Step 2: create a multi-threaded data loader.
         """
         self.opt = opt
-        self.dataset = AlignedDataset(opt, valid)
+        self.dataset = AlignedDataset(opt, valid, nd_ped)
         print("dataset [%s] was created" % type(self.dataset).__name__)
         if not valid:
             self.dataloader = torch.utils.data.DataLoader(
