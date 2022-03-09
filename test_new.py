@@ -375,7 +375,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_10'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_15'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
@@ -384,11 +384,11 @@ if __name__ == '__main__':
     # For resnet dropout is in the middle of a sequential so needs to be commented out to maintain layer indices
     # For for unet its at the end so can remove it and still load the state_dict (nn.Dropout has no weights so
     # we don't get an unexpected key error when doing this)
-    options['no_dropout'] = True
+    # options['no_dropout'] = True
     options['num_threads'] = 1
     options['phase'] = 'test'
     options['isTrain'] = False
-    options['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    options['epoch'] = 'bias_good_mu_best_sigma' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     # if options['mask_type'] == 'none_weighted' or options['mask_type'] == 'saved_1rms':
     #     print("How do I want to compare L1 losses for models trained with none_weigthed and saved_time?")
@@ -400,7 +400,7 @@ if __name__ == '__main__':
     include_realA = True
     
     # True if checkpoint was using nd_fd_radi_1-8_vtxaligned before the nd ped was subtracted
-    nd_ped = True
+    nd_ped = False
 
     if 'adam_weight_decay' not in options:
         options['adam_weight_decay'] = 0
@@ -417,6 +417,9 @@ if __name__ == '__main__':
 
     if 'rms' not in options:
         options['rms'] = 0
+
+    if 'unaligned' not in options:
+        options['unaligned'] = False
 
     half_precision = False
     if half_precision:

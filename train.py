@@ -10,6 +10,7 @@ from model import *
 from dataset import *
 from networks import CustomLoss
 
+# torch.autograd.set_detect_anomaly(True)
 
 def main(opt):
     dataset = CustomDatasetDataLoader(opt).load_data()
@@ -240,38 +241,30 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
 if __name__ == '__main__':
     options = {
-        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_1-8',
+        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_unalignedtest',
+        'unaligned' : True,
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
         'samples' : 1, # 0 to do samples = ticks//512
         'mask_type' : 'auto', # 'auto', 'saved', 'none'. 'none_weighted', 'saved_1rms'
         'rms' : 3.610753167639414, # needed is mask_type='saved_1rms'. collection_fsb_nu: 3.610753167639414, U_fsb_fixedbb_nu: 3.8106195813271166, V_fsb_fixedbb_nu: 3.8106180475002605
-        # 'A_ch0_scalefactor' : 5.809056318801011e-05, # collection:0.00012918744969763678, U:5.809056318801011e-05, V:0.0001036767938158866. charge [0,1] using 0 and maximum in train
-        # 'A_ch1_scalefactor' : 0.002782244826415745, # collection:0.0027748949702253766, U:0.002782244826415745, V:0.0027785650378718413. X [0,1] using 0 and maximum in train
-        # 'B_ch0_scalefactor' : 0.0004268032437046522, # collection:0.00031279324366593683, U:0.0004268032437046522, V:0.0004268032437046522. +ve adc [0,1] and -ve adc [-1,0] with same scalefactor ie. 1/max(max(abs(-ve adc)),max(+ve adc))
-        # 'A_ch0_scalefactor' : 0.00012918744969763678,
-        # 'A_ch1_scalefactor' : 0.0027748949702253766,
-        # 'B_ch0_scalefactor' : 0.00031279324366593683,
-        # 'A_ch0_scalefactor' : 0.0001036767938158866,
-        # 'A_ch1_scalefactor' : 0.0027785650378718413,
-        # 'B_ch0_scalefactor' : 0.0004268032437046522,
-        # 'A_ch0_scalefactor' : 0.0002781641168289291, # charge is scaled to ADC in MakeSimImages so use same scaling as ADC (values > 1 possible)
-        # 'A_ch1_scalefactor' : 0.0016666138905601323, # 1/600.019 for max X
+        # 'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
         # 'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])
-        # 'A_ch0_scalefactor' : 0.000425531914893617, # charge is scaled to ADC in MakeSimImages so use same scaling as ADC (values > 1 possible) 
-        # 'A_ch1_scalefactor' : 0.0016666138905601323, # 1/600.019 for max X
-        # 'B_ch0_scalefactor' : 0.000425531914893617, # 1/2350 for induction ([-2350, 1745])
-        'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
-        'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])
-        'name' : "nd_fd_radi_1-8_1",
+        'A_ch0_scalefactor' : 1.0, # nd adc
+        'A_ch1_scalefactor' : 1.0, # nd drift distance
+        'A_ch2_scalefactor' : 1.0, # fd drift distance
+        'A_ch3_scalefactor' : 1.0, # num nd packets stacked
+        'A_ch4_scalefactor' : 1.0, # if two pixel cols map to the wire
+        'B_ch0_scalefactor' : 1.0, # fd adc
+        'name' : "nd_fd_radi_1-8_vtxaligned_noped_more_channels_test",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
-        'input_nc' :  1,
+        'input_nc' :  5,
         'output_nc' : 1,
         'ngf' : 64,
         'ndf' : 64,
         'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel'
-        'netG' : 'unet_256', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks'
-        'n_layers_D' : 5, # -------------- CHANGED FROM THE USUAL 5 --------------
+        'netG' : 'resnet_9blocks', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks'
+        'n_layers_D' : 4, # -------------- CHANGED FROM THE USUAL 5 --------------
         'norm' : 'batch', # 'batch', 'instance', 'none'
         'init_type' : 'xavier', # 'normal', 'xavier', 'kaiming', 'orthogonal'
         'init_gain' : 0.02,
@@ -279,19 +272,19 @@ if __name__ == '__main__':
         'serial_batches' : False,
         'num_threads' : 4,
         'batch_size' : 1,
-        'max_dataset_size' : 8000, # Something like this
+        'max_dataset_size' : 19000, # Something like this
         'display_freq' : 500,
         'print_freq' : 100,
-        'valid_freq' : 4000, # 'epoch' for at the end of each epoch
-        'save_latest_freq' : 4000,
-        'save_epoch_freq' : 2,
+        'valid_freq' : 15, # 9500, # 'epoch' for at the end of each epoch
+        'save_latest_freq' : 10000,
+        'save_epoch_freq' : 4,
         'phase' : 'train',
         'n_epochs' : 7,
         'n_epochs_decay' : 7,
         'beta1' : 0.5,
         # 'lamda_L1_reg' : 0.005, # 0 for no L1 regularisation
         'adam_weight_decay' : 0, # 0 is default, 0.001
-        'lr' : 0.0002, # 0.0002, 0.00005
+        'lr' : 0.0001, # 0.0002, 0.00005
         'gan_mode' : 'vanilla', # 'vanilla', 'lsgan', 'wgangp
         'pool_size' : 0,
         'lr_policy' : 'linear', # 'linear', 'step', 'plateau', 'cosine'
@@ -307,9 +300,9 @@ if __name__ == '__main__':
         'tick_offset' : 58,
         'unconditional_D' : False, # need True if we want to load into a cycleGAN setup
         'noise_layer' : False,
-        'kernel_size' : 3, # 4 originally, (3,5)
-        'outer_stride' : (1,3), # 2 originally
-        'inner_stride_1' : (1,3) # 2 originally
+        'kernel_size' : 4, # 4, (3,5)
+        'outer_stride' : 2, # 2, (1,3)
+        'inner_stride_1' : 2 # 2, (1,3)
     }
     # epoch : 'latest' for test
 

@@ -7,11 +7,9 @@ import torch
 
 from matplotlib import pyplot as plt
 
-class AlignedDataset():
-    """A dataset class for paired image dataset.
-
-    It assumes that the directory '/path/to/data/train' contains image pairs in the form of {A,B}.
-    During test time, you need to prepare a directory '/path/to/data/test'.
+class Dataset():
+    """
+    A dataset class for paired image dataset. Either aligned or unaligned.
     """
     def __init__(self, opt, valid=False, nd_ped=False):
         """Initialize this dataset class.
@@ -22,13 +20,26 @@ class AlignedDataset():
         self.opt = opt
         self.root = opt.dataroot
 
-        if not valid:
-            self.dir_AB = os.path.join(opt.dataroot, opt.phase)  # get the image directory
+        if self.opt.unaligned:
+            if not valid:
+                self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')
+                self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')
+
+            else:
+                self.dir_A = os.path.join(opt.dataroot, 'validA')
+                self.dir_B = os.path.join(opt.dataroot, 'validB')
+
+            self.A_paths = sorted(make_dataset(self.dir_A, opt.max_dataset_size))
+            self.B_paths = sorted(make_dataset(self.dir_B, opt.max_dataset_size))
 
         else:
-            self.dir_AB = os.path.join(opt.dataroot, "valid")
+            if not valid:
+                self.dir_AB = os.path.join(opt.dataroot, opt.phase)  # get the image directory
+            else:
+                self.dir_AB = os.path.join(opt.dataroot, "valid")
 
-        self.AB_paths = sorted(make_dataset(self.dir_AB, opt.max_dataset_size))  # get image paths
+            self.AB_paths = sorted(make_dataset(self.dir_AB, opt.max_dataset_size))  # get image paths
+
         self.input_nc = self.opt.input_nc
         self.output_nc = self.opt.output_nc
 
@@ -47,26 +58,21 @@ class AlignedDataset():
             B_paths (str) - - image paths (same as A_paths)
         """
         # read a image given a random integer index
-        AB_path = self.AB_paths[index]
-        AB = np.load(AB_path)
-
-        if False: #(self.opt.input_nc == 1 and self.opt.output_nc == 1):
-            AB = np.expand_dims(AB, axis=0) # Add a channel dimension
-
-        # AB = Image.open(AB_path)
-        # split AB image into A and B
-        _, h, w = AB.shape
-        w2 = int(w / 2)
-        if self.opt.direction == 'AtoB':
-            A = AB[:,:,:w2]
-            B = AB[:,:,w2:]
-
-        elif self.opt.direction == 'BtoA':
-            B = AB[:,:,:w2]
-            A = AB[:,:,w2:]
+        if self.opt.unaligned:
+            A_path = self.A_paths[index]
+            B_path = self.B_paths[index]
+            A = np.load(A_path)
+            B = np.load(B_path)
 
         else:
-            raise NotImplementedError('direction %s is not valid' % direction)
+            AB_path = self.AB_paths[index]
+            AB = np.load(AB_path)
+
+            # split AB image into A and B
+            _, h, w = AB.shape
+            w2 = int(w / 2)
+            A = AB[:,:,:w2]
+            B = AB[:,:,w2:]
 
         # if self.opt.using_mask: # Keeping mask in the unused B channel
         if self.opt.mask_type in ['saved', 'saved_1rms']:
@@ -74,13 +80,26 @@ class AlignedDataset():
         else:
             full_mask = np.zeros((1, B.shape[1], B.shape[2])) # Can't be bothered to refactor out the mask object when not in the data so have this.
 
-        # Aligned images need the same channels so if input_nc != output_nc there will be zero channels in one of A and B.
-        A = A[:self.opt.input_nc, :, :]
-        B = B[:self.opt.output_nc, :, :]
+        if not self.opt.unaligned: # Aligned images need the same channels so if input_nc != output_nc there will be zero channels in one of A and B.
+            A = A[:self.opt.input_nc, :, :]
+            B = B[:self.opt.output_nc, :, :]
 
-        A[0]*=self.opt.A_ch0_scalefactor
-        # A[1]*=self.opt.A_ch1_scalefactor
+        # Adding back on nd ped for legacy
+        if self.nd_ped:
+            A[A != 0] += 74.0 
+
         B[0]*=self.opt.B_ch0_scalefactor
+
+        if self.opt.input_nc == 1:
+            A[0]*=self.opt.A_ch0_scalefactor
+
+        elif self.opt.input_nc == 5:
+            A[0]*=self.opt.A_ch0_scalefactor
+            A[1]*=self.opt.A_ch1_scalefactor
+            A[2]*=self.opt.A_ch2_scalefactor
+            A[3]*=self.opt.A_ch3_scalefactor
+            A[4]*=self.opt.A_ch4_scalefactor
+
         
         A_tiles, B_tiles = [], []
         samples = self.opt.samples if self.opt.samples else A.shape[2] // 512
@@ -118,16 +137,14 @@ class AlignedDataset():
         #     noise = torch.randn((1,512,512))
         #     A = torch.cat((A, noise), 0)
         
-        # Adding back on nd ped for legacy
-        if self.nd_ped:
-            A[A != 0] += 74.0 
-        
-        return {'A': A, 'B': B, 'A_paths': AB_path, 'B_paths': AB_path, 'mask' : mask}
+        if self.opt.unaligned:
+            return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path, 'mask' : mask}
+        else:
+            return {'A': A, 'B': B, 'A_paths': AB_path, 'B_paths': AB_path, 'mask' : mask}
 
     def __len__(self):
         """Return the total number of images in the dataset."""
-        return len(self.AB_paths)
-
+        return len(self.A_paths) if self.opt.unaligned else len(self.AB_paths)
 
 def make_dataset(dir, max_dataset_size=float("inf")):
     images = []
@@ -151,7 +168,7 @@ class CustomDatasetDataLoader():
         Step 2: create a multi-threaded data loader.
         """
         self.opt = opt
-        self.dataset = AlignedDataset(opt, valid, nd_ped)
+        self.dataset = Dataset(opt, valid, nd_ped)
         print("dataset [%s] was created" % type(self.dataset).__name__)
         if not valid:
             self.dataloader = torch.utils.data.DataLoader(
