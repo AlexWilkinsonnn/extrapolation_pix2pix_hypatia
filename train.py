@@ -242,6 +242,7 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 if __name__ == '__main__':
     options = {
         'dataroot' : '/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_unalignedtest',
+        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_unalignedtest', # Can be /share/gpu{0,1,2,3}
         'unaligned' : True,
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
         'samples' : 1, # 0 to do samples = ticks//512
@@ -305,6 +306,10 @@ if __name__ == '__main__':
         'inner_stride_1' : 2 # 2, (1,3)
     }
     # epoch : 'latest' for test
+
+    # If data is not on the current node, grab it from the share disk.
+    if not os.path.exists(opt['dataroot']):
+        opt['dataroot'] = opt['dataroot_shared_disk']
 
     print("Using configuration:")
     for key, value in options.items():
