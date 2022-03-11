@@ -241,8 +241,8 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
 if __name__ == '__main__':
     options = {
-        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_unalignedtest',
-        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_unalignedtest', # Can be /share/gpu{0,1,2,3}
+        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels',
+        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels', # Can be /share/gpu{0,1,2,3}
         'unaligned' : True,
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
         'samples' : 1, # 0 to do samples = ticks//512
@@ -250,13 +250,13 @@ if __name__ == '__main__':
         'rms' : 3.610753167639414, # needed is mask_type='saved_1rms'. collection_fsb_nu: 3.610753167639414, U_fsb_fixedbb_nu: 3.8106195813271166, V_fsb_fixedbb_nu: 3.8106180475002605
         # 'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
         # 'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])
-        'A_ch0_scalefactor' : 1.0, # nd adc
-        'A_ch1_scalefactor' : 1.0, # nd drift distance
-        'A_ch2_scalefactor' : 1.0, # fd drift distance
-        'A_ch3_scalefactor' : 1.0, # num nd packets stacked
+        'A_ch0_scalefactor' : 0.0011947431302270011, # nd adc. 1/837 for nd ADC range in nd_fd_radi_1-8_vtxaligned_noped_morechannels [4, 837].
+        'A_ch1_scalefactor' : 0.14085904245475275, # nd drift distanc. 1/sqrt(50.4) for max nd drift in a module.
+        'A_ch2_scalefactor' : 0.05645979274839422, # fd drift distance. 1/sqrt(313.705) for max fd drift accounting for putting the vtx and 2000 and associated cuts.
+        'A_ch3_scalefactor' : 0.025, # num nd packets stacked. 1/40 for nd num packets in nd_fd_radi_1-8_vtxaligned_noped_morechannels [1, 40]
         'A_ch4_scalefactor' : 1.0, # if two pixel cols map to the wire
-        'B_ch0_scalefactor' : 1.0, # fd adc
-        'name' : "nd_fd_radi_1-8_vtxaligned_noped_more_channels_test",
+        'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+        'name' : "nd_fd_radi_1-8_vtxaligned_noped_more_channels_3",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
         'input_nc' :  5,
@@ -264,7 +264,7 @@ if __name__ == '__main__':
         'ngf' : 64,
         'ndf' : 64,
         'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel'
-        'netG' : 'resnet_9blocks', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks'
+        'netG' : 'unet_256', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks'
         'n_layers_D' : 4, # -------------- CHANGED FROM THE USUAL 5 --------------
         'norm' : 'batch', # 'batch', 'instance', 'none'
         'init_type' : 'xavier', # 'normal', 'xavier', 'kaiming', 'orthogonal'
@@ -301,15 +301,15 @@ if __name__ == '__main__':
         'tick_offset' : 58,
         'unconditional_D' : False, # need True if we want to load into a cycleGAN setup
         'noise_layer' : False,
-        'kernel_size' : 4, # 4, (3,5)
-        'outer_stride' : 2, # 2, (1,3)
-        'inner_stride_1' : 2 # 2, (1,3)
+        'kernel_size' : (3,5), # 4, (3,5)
+        'outer_stride' : (1,3), # 2, (1,3)
+        'inner_stride_1' : (1,3) # 2, (1,3)
     }
     # epoch : 'latest' for test
 
     # If data is not on the current node, grab it from the share disk.
-    if not os.path.exists(opt['dataroot']):
-        opt['dataroot'] = opt['dataroot_shared_disk']
+    if not os.path.exists(options['dataroot']):
+        options['dataroot'] = options['dataroot_shared_disk']
 
     print("Using configuration:")
     for key, value in options.items():

@@ -381,8 +381,8 @@ if __name__ == '__main__':
         options = yaml.load(f, Loader=yaml.FullLoader)
 
     # If data is not on the current node, grab it from the share disk.
-    if not os.path.exists(opt['dataroot']):
-        opt['dataroot'] = opt['dataroot_shared_disk']
+    if not os.path.exists(options['dataroot']):
+        options['dataroot'] = options['dataroot_shared_disk']
 
     options['gpu_ids'] = [0]
     # For resnet dropout is in the middle of a sequential so needs to be commented out to maintain layer indices
