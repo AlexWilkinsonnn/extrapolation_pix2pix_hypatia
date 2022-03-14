@@ -6,6 +6,7 @@ from scipy import stats
 import torch
 import yaml
 
+sys.path.append('/home/awilkins/pix2pix')
 from model import *
 from dataset import *
 from networks import CustomLoss
