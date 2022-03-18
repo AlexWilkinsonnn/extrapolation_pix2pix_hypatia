@@ -31,15 +31,10 @@ def main(opt):
 
     for epoch in range(1, opt.n_epochs + opt.n_epochs_decay + 1):
         epoch_start_time = time.time()
-        iter_data_time = time.time()
         epoch_iter = 0
         model.update_learning_rate()
         
         for i, data in enumerate(dataset):
-            iter_start_time = time.time()
-            if total_iters % opt.print_freq == 0:
-                t_data = iter_start_time - iter_data_time
-
             for tile_number in range(1):#len(data['A'])):
                 # mask = data['mask'][tile_number]
                 # if opt.using_mask:
@@ -83,9 +78,8 @@ def main(opt):
                     with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
                         f.write(loss_line + '\n')
                     
-                if total_iters % opt.print_freq == 0: # print training losses and save logging information to the disk
+                elif total_iters % opt.print_freq == 0: # print training losses and save logging information to the disk
                     losses = model.get_current_losses()
-                    t_comp = (time.time() - iter_start_time) / opt.batch_size
                     loss_line = "total_iters={}, epoch={}, epoch_iter={} : G_GAN={}, G_pix={}, G_channel={}, D_real={}, D_fake={}".format(
                         total_iters, epoch, epoch_iter, losses['G_GAN'], losses['G_pix'],
                         losses['G_channel'], losses['D_real'], losses['D_fake'])
@@ -97,8 +91,6 @@ def main(opt):
                     print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
                     save_suffix = 'latest'
                     model.save_networks(save_suffix)
-
-                iter_data_time = time.time()
 
                 if opt.valid_freq != 'epoch' and total_iters % opt.valid_freq == 0:
                     valid(dataset_valid_iterator, dataset_valid, model, opt, epoch, total_iters, best_metrics)
@@ -276,7 +268,7 @@ if __name__ == '__main__':
         'num_threads' : 4,
         'batch_size' : 1,
         'max_dataset_size' : 19000, # Something like this
-        'display_freq' : 500,
+        'display_freq' : 2000,
         'print_freq' : 100,
         'valid_freq' : 9500, # 'epoch' for at the end of each epoch
         'save_latest_freq' : 10000,
