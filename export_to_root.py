@@ -1,10 +1,12 @@
-import os
+import os, sys
+from collections import namedtuple
 
 import numpy as np
 import torch, yaml, ROOT
+from tqdm import tqdm
 
 from model import *
-from datasets import *
+from dataset import *
 
 def main(opt):
   dataset_test = CustomDatasetDataLoader(opt, valid=True).load_data()
@@ -17,7 +19,7 @@ def main(opt):
   model.eval()
 
   ROOT.gROOT.ProcessLine("struct Digs { Int_t ch; std::vector<short> digvec; };")
-  ROOT.gROOT.ProcessLine("struct packet { Int_t ch; Int_t tick; int_t adc; };")
+  ROOT.gROOT.ProcessLine("struct packet { Int_t ch; Int_t tick; Int_t adc; };")
 
   f = ROOT.TFile.Open(opt.out_path, "RECREATE")
   t = ROOT.TTree("digs_hits", "ndfdtranslations")
@@ -32,7 +34,7 @@ def main(opt):
   for i, data in enumerate(dataset_test):
     rawdigits_pred.clear()
     rawdigits_true.clear()
-    packet.clear()
+    packets.clear()
 
     model.set_input(data)
     model.test()
