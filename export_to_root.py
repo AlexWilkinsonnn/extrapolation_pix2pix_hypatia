@@ -18,15 +18,15 @@ def main(opt):
   model.setup(opt)
   model.eval()
 
-  ROOT.gROOT.ProcessLine("struct Digs { Int_t ch; std::vector<short> digvec; };")
+  ROOT.gROOT.ProcessLine("struct digs { Int_t ch; std::vector<short> digvec; };")
   ROOT.gROOT.ProcessLine("struct packet { Int_t ch; Int_t tick; Int_t adc; };")
 
   f = ROOT.TFile.Open(opt.out_path, "RECREATE")
   t = ROOT.TTree("digs_hits", "ndfdtranslations")
 
-  rawdigits_pred = ROOT.vector("Digs")(480)
+  rawdigits_pred = ROOT.vector("digs")()
   t.Branch("rawdigits_translated", rawdigits_pred)
-  rawdigits_true = ROOT.vector("Digs")(480)
+  rawdigits_true = ROOT.vector("digs")()
   t.Branch("rawdigits_true", rawdigits_true)
   packets = ROOT.vector("packet")()
   t.Branch("nd_packets", packets)
@@ -53,16 +53,20 @@ def main(opt):
       for tick, adc in enumerate(adc_vec):
         digvec[tick] = adc
       
-      rawdigits_true[ch].ch = ch + opt.first_ch_number
-      rawdigits_true[ch].digvec = digvec
+      digs = ROOT.digs()
+      digs.ch = ch + opt.first_ch_number
+      digs.digvec = digvec
+      rawdigits_true.push_back(digs)
 
     for ch, adc_vec in enumerate(fakeB):
       digvec = ROOT.vector("short")(6000)
       for tick, adc in enumerate(adc_vec):
         digvec[tick] = adc
       
-      rawdigits_pred[ch].ch = ch + opt.first_ch_number
-      rawdigits_pred[ch].digvec = digvec 
+      digs = ROOT.digs()
+      digs.ch = ch + opt.first_ch_number
+      digs.digvec = digvec
+      rawdigits_pred.push_back(digs)
 
     for ch, adc_vec in enumerate(realA):
       for tick, adc in enumerate(adc_vec):
@@ -84,6 +88,9 @@ if __name__ == '__main__':
   with open(os.path.join(experiment_dir, 'config.yaml')) as f:
     options = yaml.load(f, Loader=yaml.FullLoader)
 
+  options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin.root"
+  options['first_ch_number'] = 14400
+
   # If data is not on the current node, grab it from the share disk.
   if not os.path.exists(options['dataroot']):
     options['dataroot'] = options['dataroot_shared_disk']
@@ -96,7 +103,7 @@ if __name__ == '__main__':
   options['num_threads'] = 1
   options['phase'] = 'test'
   options['isTrain'] = False
-  options['epoch'] = 'bias_good_mu_best_sigma' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+  options['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
   half_precision = False
   if half_precision:
@@ -110,9 +117,6 @@ if __name__ == '__main__':
     print("###########################################\n" + 
         "Using test_sample" +
         "\n###########################################")
-
-  options['out_path'] = "/state/partition1/awilkins/test.root"
-  options['first_ch_number'] = 14400
 
   print("Using configuration:")
   for key, value in options.items():
