@@ -7,7 +7,7 @@
 #SBATCH --mail-user=alexander.wilkinson.20@ucl.ac.uk
 #SBATCH --mail-type=END,FAIL
 
-echo run_test.sh
+echo run_test_node1.sh
 cd /home/awilkins/extrapolation_pix2pix
 module load gcc/8.3.0
 source /share/apps/anaconda/3-2019.03/etc/profile.d/conda.sh

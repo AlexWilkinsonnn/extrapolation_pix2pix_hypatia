@@ -48,8 +48,6 @@ def main(opt):
     realB = realB[0, 0].numpy().astype(int) # true fd response to nd event
     fakeB = fakeB[0, 0].numpy().astype(int) # pred fd response translated from nd event
     
-    print(realA.shape, realB.shape, fakeB.shape, sep='\n')
-
     for ch, adc_vec in enumerate(realB):
       digvec = ROOT.vector("short")(6000)
       for tick, adc in enumerate(adc_vec):
