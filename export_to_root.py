@@ -18,22 +18,28 @@ def main(opt):
   model.setup(opt)
   model.eval()
 
-  ROOT.gROOT.ProcessLine("struct digs { Int_t ch; std::vector<short> digvec; };")
-  ROOT.gROOT.ProcessLine("struct packet { Int_t ch; Int_t tick; Int_t adc; };")
+  # ROOT.gROOT.ProcessLine("struct Digs { Int_t ch; std::vector<short> digvec; };")
+  # ROOT.gROOT.ProcessLine("struct Packet { Int_t ch; Int_t tick; Int_t adc; };")
 
   f = ROOT.TFile.Open(opt.out_path, "RECREATE")
   t = ROOT.TTree("digs_hits", "ndfdtranslations")
 
-  rawdigits_pred = ROOT.vector("digs")()
-  t.Branch("rawdigits_translated", rawdigits_pred)
-  rawdigits_true = ROOT.vector("digs")()
-  t.Branch("rawdigits_true", rawdigits_true)
-  packets = ROOT.vector("packet")()
+  digs_pred = ROOT.std.map("int", "std::vector<short>")()
+  t.Branch("rawdigits_translated", digs_pred)
+  digs_true = ROOT.std.map("int", "std::vector<short>")()
+  t.Branch("rawdigits_true", digs_true)
+  packets = ROOT.vector("std::map<std::string, int>")()
   t.Branch("nd_packets", packets)
+  # rawdigits_pred = ROOT.vector("Digs")()
+  # t.Branch("rawdigits_translated", rawdigits_pred)
+  # rawdigits_true = ROOT.vector("Digs")()
+  # t.Branch("rawdigits_true", rawdigits_true)
+  # packets = ROOT.vector("Packet")()
+  # t.Branch("nd_packets", packets)
 
   for i, data in enumerate(dataset_test):
-    rawdigits_pred.clear()
-    rawdigits_true.clear()
+    digs_pred.clear()
+    digs_true.clear()
     packets.clear()
 
     model.set_input(data)
@@ -52,29 +58,23 @@ def main(opt):
       digvec = ROOT.vector("short")(6000)
       for tick, adc in enumerate(adc_vec):
         digvec[tick] = adc
-      
-      digs = ROOT.digs()
-      digs.ch = ch + opt.first_ch_number
-      digs.digvec = digvec
-      rawdigits_true.push_back(digs)
+
+      digs_pred[ch + opt.first_ch_number] = digvec      
 
     for ch, adc_vec in enumerate(fakeB):
       digvec = ROOT.vector("short")(6000)
       for tick, adc in enumerate(adc_vec):
         digvec[tick] = adc
       
-      digs = ROOT.digs()
-      digs.ch = ch + opt.first_ch_number
-      digs.digvec = digvec
-      rawdigits_pred.push_back(digs)
+      digs_true[ch + opt.first_ch_number] = digvec    
 
     for ch, adc_vec in enumerate(realA):
       for tick, adc in enumerate(adc_vec):
         if adc != 0:
-          packet = ROOT.packet()
-          packet.ch = ch
-          packet.tick = tick
-          packet.adc = adc
+          packet = ROOT.std.map("std::string", "int")()
+          packet['ch'] = ch
+          packet['tick'] = tick
+          packet['adc'] = adc
           packets.push_back(packet)
     
     t.Fill()
