@@ -9,7 +9,7 @@ from model import *
 from dataset import *
 
 def main(opt):
-  dataset_test = CustomDatasetDataLoader(opt, valid=True).load_data()
+  dataset_test = CustomDatasetDataLoader(opt, valid=valid).load_data()
   dataset_test_size = len(dataset_test)
   print("Number of test images={}".format(dataset_test_size))
 
@@ -20,26 +20,28 @@ def main(opt):
 
   # ROOT.gROOT.ProcessLine("struct Digs { Int_t ch; std::vector<short> digvec; };")
   # ROOT.gROOT.ProcessLine("struct Packet { Int_t ch; Int_t tick; Int_t adc; };")
+  ROOT.gROOT.ProcessLine("#include <map>")
+  ROOT.gROOT.ProcessLine("#include <vector>")
 
   f = ROOT.TFile.Open(opt.out_path, "RECREATE")
   t = ROOT.TTree("digs_hits", "ndfdtranslations")
 
-  digs_pred = ROOT.std.map("int", "std::vector<short>")()
+  chs = ROOT.vector("int")(480)
+  t.Branch("channels", chs)
+  digs_pred = ROOT.vector("std::vector<int>")(480)
   t.Branch("rawdigits_translated", digs_pred)
-  digs_true = ROOT.std.map("int", "std::vector<short>")()
+  digs_true = ROOT.vector("std::vector<int>")(480)
   t.Branch("rawdigits_true", digs_true)
   packets = ROOT.vector("std::map<std::string, int>")()
   t.Branch("nd_packets", packets)
-  # rawdigits_pred = ROOT.vector("Digs")()
-  # t.Branch("rawdigits_translated", rawdigits_pred)
-  # rawdigits_true = ROOT.vector("Digs")()
-  # t.Branch("rawdigits_true", rawdigits_true)
-  # packets = ROOT.vector("Packet")()
-  # t.Branch("nd_packets", packets)
+
+  for i in range(480):
+    chs[i] = i + opt.first_ch_number
 
   for i, data in enumerate(dataset_test):
-    digs_pred.clear()
-    digs_true.clear()
+    for i in range(digs_true.size()):
+      digs_true[i].clear()
+      digs_pred[i].clear()
     packets.clear()
 
     model.set_input(data)
@@ -50,24 +52,23 @@ def main(opt):
     realA = visuals['real_A'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
     realB = visuals['real_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
     fakeB = visuals['fake_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+    realA/=opt.A_ch0_scalefactor
+    realB/=opt.B_ch0_scalefactor
+    fakeB/=opt.B_ch0_scalefactor
     realA = realA[0, 0].numpy().astype(int) # Nd packets adc
     realB = realB[0, 0].numpy().astype(int) # true fd response to nd event
     fakeB = fakeB[0, 0].numpy().astype(int) # pred fd response translated from nd event
     
     for ch, adc_vec in enumerate(realB):
-      digvec = ROOT.vector("short")(6000)
+      digs_true[ch] = ROOT.vector("int")(4492)
       for tick, adc in enumerate(adc_vec):
-        digvec[tick] = adc
-
-      digs_pred[ch + opt.first_ch_number] = digvec      
+        digs_true[ch][tick] = int(adc)
 
     for ch, adc_vec in enumerate(fakeB):
-      digvec = ROOT.vector("short")(6000)
+      digs_pred[ch] = ROOT.vector("int")(4492)
       for tick, adc in enumerate(adc_vec):
-        digvec[tick] = adc
+        digs_pred[ch][tick] = int(adc)
       
-      digs_true[ch + opt.first_ch_number] = digvec    
-
     for ch, adc_vec in enumerate(realA):
       for tick, adc in enumerate(adc_vec):
         if adc != 0:
@@ -76,7 +77,7 @@ def main(opt):
           packet['tick'] = tick
           packet['adc'] = adc
           packets.push_back(packet)
-    
+
     t.Fill()
 
   f.Write()
@@ -89,7 +90,11 @@ if __name__ == '__main__':
     options = yaml.load(f, Loader=yaml.FullLoader)
 
   options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin.root"
+  # options['out_path'] = "/state/partition1/awilkins/test.root"
   options['first_ch_number'] = 14400
+
+  valid = True
+  options['phase'] = 'test' # 'train', 'test'
 
   # If data is not on the current node, grab it from the share disk.
   if not os.path.exists(options['dataroot']):
@@ -101,7 +106,6 @@ if __name__ == '__main__':
   # we don't get an unexpected key error when doing this)
   # options['no_dropout'] = True
   options['num_threads'] = 1
-  options['phase'] = 'test'
   options['isTrain'] = False
   options['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
