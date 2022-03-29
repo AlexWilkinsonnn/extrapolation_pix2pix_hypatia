@@ -32,7 +32,7 @@ def main(opt):
   t.Branch("rawdigits_translated", digs_pred)
   digs_true = ROOT.vector("std::vector<int>")(480)
   t.Branch("rawdigits_true", digs_true)
-  packets = ROOT.vector("std::map<std::string, int>")()
+  packets = ROOT.vector("std::vector<int>")()
   t.Branch("nd_packets", packets)
 
   for i in range(480):
@@ -72,10 +72,10 @@ def main(opt):
     for ch, adc_vec in enumerate(realA):
       for tick, adc in enumerate(adc_vec):
         if adc != 0:
-          packet = ROOT.std.map("std::string", "int")()
-          packet['ch'] = ch
-          packet['tick'] = tick
-          packet['adc'] = adc
+          packet = ROOT.vector("int")(3)
+          packet[0] = ch
+          packet[1] = tick
+          packet[2] = adc
           packets.push_back(packet)
 
     t.Fill()
@@ -89,8 +89,8 @@ if __name__ == '__main__':
   with open(os.path.join(experiment_dir, 'config.yaml')) as f:
     options = yaml.load(f, Loader=yaml.FullLoader)
 
-  options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin.root"
-  # options['out_path'] = "/state/partition1/awilkins/test.root"
+  # options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin.root"
+  options['out_path'] = "/state/partition1/awilkins/test.root"
   options['first_ch_number'] = 14400
 
   valid = True
