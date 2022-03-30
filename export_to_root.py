@@ -73,7 +73,7 @@ def main(opt):
       for tick, adc in enumerate(adc_vec):
         if adc != 0:
           packet = ROOT.vector("int")(3)
-          packet[0] = ch
+          packet[0] = ch + opt.first_ch_number
           packet[1] = tick
           packet[2] = adc
           packets.push_back(packet)
@@ -89,12 +89,12 @@ if __name__ == '__main__':
   with open(os.path.join(experiment_dir, 'config.yaml')) as f:
     options = yaml.load(f, Loader=yaml.FullLoader)
 
-  # options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin.root"
-  options['out_path'] = "/state/partition1/awilkins/test.root"
+  options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin_train.root"
+  # options['out_path'] = "/state/partition1/awilkins/test.root"
   options['first_ch_number'] = 14400
 
-  valid = True
-  options['phase'] = 'test' # 'train', 'test'
+  valid = False
+  options['phase'] = 'train' # 'train', 'test'
 
   # If data is not on the current node, grab it from the share disk.
   if not os.path.exists(options['dataroot']):
