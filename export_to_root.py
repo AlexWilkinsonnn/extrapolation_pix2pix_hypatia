@@ -20,7 +20,6 @@ def main(opt):
 
   # ROOT.gROOT.ProcessLine("struct Digs { Int_t ch; std::vector<short> digvec; };")
   # ROOT.gROOT.ProcessLine("struct Packet { Int_t ch; Int_t tick; Int_t adc; };")
-  ROOT.gROOT.ProcessLine("#include <map>")
   ROOT.gROOT.ProcessLine("#include <vector>")
 
   f = ROOT.TFile.Open(opt.out_path, "RECREATE")
@@ -39,6 +38,11 @@ def main(opt):
     chs[i] = i + opt.first_ch_number
 
   for i, data in enumerate(dataset_test):
+    if opt.end_i != -1 and i < opt.start_i:
+      continue
+    if opt.end_i != -1 and i >= opt.end_i:
+      break
+
     for i in range(digs_true.size()):
       digs_true[i].clear()
       digs_pred[i].clear()
@@ -89,9 +93,13 @@ if __name__ == '__main__':
   with open(os.path.join(experiment_dir, 'config.yaml')) as f:
     options = yaml.load(f, Loader=yaml.FullLoader)
 
-  options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin_train.root"
+  options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin_train9500-19000.root"
   # options['out_path'] = "/state/partition1/awilkins/test.root"
   options['first_ch_number'] = 14400
+
+  options['start_i'] = 9500 # -1 for all
+  options['end_i'] = 19000 # -1 for all
+  options['serial_batches'] = True # turn off shuffle so can split the work up
 
   valid = False
   options['phase'] = 'train' # 'train', 'test'
