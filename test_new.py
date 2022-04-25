@@ -130,9 +130,9 @@ def main(opt):
             # auto-cropping.
             non_zeros = np.nonzero(realA)
             ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
-            ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < 480 else 480
+            ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < realA.shape[0] else realA.shape[0]
             tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
-            tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < 4492 else 4492
+            tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < realA.shape[1] else realA.shape[1]
             realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
             realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
             fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
@@ -265,9 +265,9 @@ def main(opt):
 
         non_zeros = np.nonzero(realA)
         ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
-        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < 480 else 480
+        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < realA.shape[0] else realA.shape[0]
         tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
-        tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < 4492 else 4492
+        tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < realA.shape[1] else realA.shape[1]
         realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
         realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
         fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
@@ -384,7 +384,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_15'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
@@ -401,7 +401,7 @@ if __name__ == '__main__':
     options['num_threads'] = 1
     options['phase'] = 'test'
     options['isTrain'] = False
-    options['epoch'] = 'bias_good_mu_best_sigma' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    options['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     # if options['mask_type'] == 'none_weighted' or options['mask_type'] == 'saved_1rms':
     #     print("How do I want to compare L1 losses for models trained with none_weigthed and saved_time?")
@@ -474,3 +474,4 @@ if __name__ == '__main__':
     opt = MyTuple(**options)
 
     main(opt)
+

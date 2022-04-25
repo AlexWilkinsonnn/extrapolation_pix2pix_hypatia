@@ -93,8 +93,8 @@ if __name__ == '__main__':
   with open(os.path.join(experiment_dir, 'config.yaml')) as f:
     options = yaml.load(f, Loader=yaml.FullLoader)
 
-  options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin_train9500-19000.root"
-  # options['out_path'] = "/state/partition1/awilkins/test.root"
+  # options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin_train9500-19000.root"
+  options['out_path'] = "/state/partition1/awilkins/test.root"
   options['first_ch_number'] = 14400
 
   options['start_i'] = 9500 # -1 for all
