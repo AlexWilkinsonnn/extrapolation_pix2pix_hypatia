@@ -27,13 +27,13 @@ def plot_images(realA, realB, fakeB, auto_crop, pdf):
     if auto_crop:
         non_zeros = np.nonzero(realA)
         ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
-        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < 480 else 480
+        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < realA.shape[0] else realA.shape[0]
         tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
         tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < 4492 else 4492
         realA = realA[ch_min:ch_max, tick_min:tick_max]
         realB = realB[ch_min:ch_max, tick_min:tick_max]
         fakeB = fakeB[ch_min:ch_max, tick_min:tick_max]
-        print("ch_min={}, cm_max={}, tick_min={}, tick_max={}".format(ch_min, ch_max, tick_min, tick_max))
+        print("ch_min={}, ch_max={}, tick_min={}, tick_max={}".format(ch_min, ch_max, tick_min, tick_max))
 
     if type(pdf) == PdfPages:
         fig, ax = plt.subplots(1, 3, figsize=(12,6))
@@ -63,7 +63,7 @@ def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf):
     if auto_crop:
         non_zeros = np.nonzero(realA)
         ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
-        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < 480 else 480
+        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < realA.shape[0] else realA.shape[0]
         tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
         tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < 4492 else 4492
         realA = realA[ch_min:ch_max, tick_min:tick_max]
