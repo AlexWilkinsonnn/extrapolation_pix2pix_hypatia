@@ -6,6 +6,7 @@ from scipy import stats
 import torch
 import yaml
 
+sys.path.append('/home/awilkins/extrapolation_pix2pix')
 from model import *
 from dataset import *
 from networks import CustomLoss
@@ -295,8 +296,8 @@ if __name__ == '__main__':
         'max_dataset_size' : 17000, # Something like this
         'display_freq' : 2000,
         'print_freq' : 100,
-        'valid_freq' : 85, # 'epoch' for at the end of each epoch
-        'num_valid' : 20,
+        'valid_freq' : 8500, # 'epoch' for at the end of each epoch
+        'num_valid' : 2000,
         'save_latest_freq' : 10000,
         'save_epoch_freq' : 4,
         'phase' : 'train',
