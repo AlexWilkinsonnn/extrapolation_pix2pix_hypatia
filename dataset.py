@@ -2,6 +2,7 @@ import os, random, time
 
 import numpy as np
 import torch
+import sparse
 
 from matplotlib import pyplot as plt
 
@@ -59,8 +60,12 @@ class Dataset():
         if self.opt.unaligned:
             A_path = self.A_paths[index]
             B_path = self.B_paths[index]
-            A = np.load(A_path)
-            B = np.load(B_path)
+
+            if self.opt.nd_sparse:
+                A = sparse.load_npz(A_path).todense()[:, 112:-112, 58:-58]
+            else:
+                A = np.load(A_path)
+            B = np.load(B_path)[:, 112:-112, 58:-58]
 
         else:
             AB_path = self.AB_paths[index]

@@ -250,12 +250,10 @@ class Pix2pix():
         self.mask = input['mask'].to(self.device) if self.opt.mask_type.startswith('saved') else False
         self.image_paths = input['A_paths']
 
-        if self.opt.mask_type.startswith('saved') and self.opt.collection_crop:
-            self.mask = self.mask[:, :, 16:-16, :]
-        elif self.opt.mask_type.startswith('saved'):
-            ch_offset = self.opt.channel_offset
-            tick_offset = self.opt.tick_offset
-            self.mask = self.mask[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+        ch_offset = self.opt.channel_offset
+        tick_offset = self.opt.tick_offset
+        using_offset = True if ch_offset and tick_offset else False # need to have both non-zero offsets if want to use offset
+        self.mask = self.mask[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset] if using_offset else self.mask
 
     # Need these two for making the torchscript.
     def get_real_A(self):
@@ -275,40 +273,25 @@ class Pix2pix():
         """Calculate GAN loss for the discriminator"""
         ch_offset = self.opt.channel_offset
         tick_offset = self.opt.tick_offset
+        using_offset = True if ch_offset and tick_offset else False
         # Fake; stop backprop to the generator by detaching fake_B
         if not self.opt.unconditional_D:
-            if self.opt.collection_crop:
-                fake_AB = torch.cat((self.real_A[:, :, 16:-16, :], self.fake_B[:, :, 16:-16, :]), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
-
-            else: 
-                fake_AB = torch.cat((self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]), 1)
+            fake_AB = torch.cat((self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]), 1) if using_offset else torch.cat((self.real_A, self.fake_B), 1)
 
             pred_fake = self.netD(fake_AB.detach())
 
         else:
-            if self.opt.collection_crop:
-                pred_fake = self.netD(self.fake_B[:, :, 16:-16, :].detach())
-
-            else:
-                pred_fake = self.netD(self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset].detach())
+            pred_fake = self.netD(self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset].detach()) if using_offset else self.netD(self.fake_B.detach())
 
         self.loss_D_fake = self.criterionGAN(pred_fake, False)
         # Real
         if not self.opt.unconditional_D:
-            if self.opt.collection_crop:
-                real_AB = torch.cat((self.real_A[:, :, 16:-16, :], self.real_B[:, :, 16:-16, :]), 1)  # we use conditional GANs; we need to feed both input and output to the discriminator
-
-            else:
-                real_AB = torch.cat((self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.real_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]), 1)
+            real_AB = torch.cat((self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.real_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]), 1) if using_offset else torch.cat((self.real_A, self.real_B), 1) # we use conditional GANs; we need to feed both input and output to the discriminator
 
             pred_real = self.netD(real_AB)
 
         else:
-            if self.opt.collection_crop:
-                pred_real = self.netD(self.real_B[:, :, 16:-16, :])
-            
-            else:
-                pred_real = self.netD(self.real_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset])
+            pred_real = self.netD(self.real_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]) if using_offset else self.netD(self.real_B)
 
         self.loss_D_real = self.criterionGAN(pred_real, True)
         # combine loss and calculate gradients
@@ -319,34 +302,23 @@ class Pix2pix():
         """Calculate GAN and L1 loss for the generator"""
         ch_offset = self.opt.channel_offset
         tick_offset = self.opt.tick_offset
+        using_offset = True if ch_offset and tick_offset else False
         # First, G(A) should fake the discriminator
         if not self.opt.unconditional_D:
-            if self.opt.collection_crop:
-                fake_AB = torch.cat((self.real_A[:, :, 16:-16, :], self.fake_B[:, :, 16:-16, :]), 1)
-
-            else:
-                fake_AB = torch.cat((self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]), 1)
+            fake_AB = torch.cat((self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]), 1) if using_offset else torch.cat((self.real_A, self.fake_B), 1)
 
             pred_fake = self.netD(fake_AB)
         
         else:
-            if self.opt.collection_crop:
-                pred_fake = self.netD(self.fake_B[:, :, 16:-16, :])
-
-            else:
-                pred_fake = self.netD(self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset])
+            pred_fake = self.netD(self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]) if using_offset else self.netD(self.fake_B)
 
         self.loss_G_GAN = self.criterionGAN(pred_fake, True)
         # Second, G(A) = B
         # self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
-        if self.opt.collection_crop:
-            self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A[:, :, 16:-16, :],
-                self.fake_B[:, :, 16:-16, :], self.real_B[:, :, 16:-16, :], self.opt.direction,
-                self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms)
+        if using_offset:
+            self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.real_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.opt.direction, self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms)
         else:
-            self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset],
-                self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.real_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset],
-                self.opt.direction, self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms)
+            self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A, self.fake_B, self.real_B, self.opt.direction, self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms)
 
         # combine loss and calculate gradients
         self.loss_G = self.loss_G_GAN + self.opt.lambda_pix * self.loss_G_pix + self.opt.lambda_channel * self.loss_G_channel

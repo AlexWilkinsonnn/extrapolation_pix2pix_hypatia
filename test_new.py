@@ -63,13 +63,19 @@ def main(opt):
         print(opt.mask_type)
         visuals = model.get_current_visuals()
         ch_offset, tick_offset = opt.channel_offset, opt.tick_offset
-        realA = visuals['real_A'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
-        realB = visuals['real_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
-        fakeB = visuals['fake_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+        if ch_offset and tick_offset:
+            realA = visuals['real_A'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+            realB = visuals['real_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+            fakeB = visuals['fake_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+            mask = data['mask'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+        else:
+            realA = visuals['real_A'].cpu()
+            realB = visuals['real_B'].cpu()
+            fakeB = visuals['fake_B'].cpu()
+            mask = data['mask'].cpu()
         realA/=opt.A_ch0_scalefactor
         realB/=opt.B_ch0_scalefactor
         fakeB/=opt.B_ch0_scalefactor
-        mask = data['mask'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
         loss_pix, loss_channel = CustomLoss(realA.float(), fakeB.float(), realB.float(), 'AtoB', mask.float(), opt.B_ch0_scalefactor, opt.mask_type, opt.nonzero_L1weight, opt.rms)
         # loss_abs_pix_bias, loss_abs_pix_bias_fractional, loss_channel_bias, loss_channel_bias_fractional, loss_event_bias, loss_event_bias_fractional = CustomLossHitBiasEstimator(
         #     realA.float(), fakeB.float(), realB.float(), mask.float(), opt.mask_type)
@@ -234,13 +240,19 @@ def main(opt):
 
         visuals = model.get_current_visuals()
         ch_offset, tick_offset = opt.channel_offset, opt.tick_offset
-        realA = visuals['real_A'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
-        realB = visuals['real_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
-        fakeB = visuals['fake_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+        if ch_offset and tick_offset:
+            realA = visuals['real_A'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+            realB = visuals['real_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+            fakeB = visuals['fake_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+            mask = data['mask'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
+        else:
+            realA = visuals['real_A'].cpu()
+            realB = visuals['real_B'].cpu()
+            fakeB = visuals['fake_B'].cpu()
+            mask = data['mask'].cpu()
         realA/=opt.A_ch0_scalefactor
         realB/=opt.B_ch0_scalefactor
         fakeB/=opt.B_ch0_scalefactor
-        mask = data['mask'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
         loss_pix, loss_channel = CustomLoss(realA.float(), fakeB.float(), realB.float(), 'AtoB', mask.float(), opt.B_ch0_scalefactor, opt.mask_type, opt.nonzero_L1weight, opt.rms)
 
         realA = realA[0, 0].numpy().astype(int)
