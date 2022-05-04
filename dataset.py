@@ -77,9 +77,10 @@ class Dataset():
             A = AB[:,:,:w2]
             B = AB[:,:,w2:]
 
-        # if self.opt.using_mask: # Keeping mask in the unused B channel
+        # if self.opt.using_mask: # Keeping mask in last channel of nd image
         if self.opt.mask_type in ['saved', 'saved_1rms']:
-            full_mask = B[1:, :, :]
+            full_mask = A[-1:, :, :] 
+            A = A[:-1, :, :]
         else:
             full_mask = np.zeros((1, B.shape[1], B.shape[2])) # Can't be bothered to refactor out the mask object when not in the data so have this.
 
