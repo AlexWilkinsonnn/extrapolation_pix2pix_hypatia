@@ -62,10 +62,22 @@ class Dataset():
             B_path = self.B_paths[index]
 
             if self.opt.nd_sparse:
-                A = sparse.load_npz(A_path).todense()[:, 112:-112, 58:-58]
+                A = sparse.load_npz(A_path).todense()
+                if 'resnet' in self.opt.netG:
+                    if A.shape[1] == 1024:
+                        A = A[:, 112:-112, 58:-58]
+                    elif A.shape[1] == 512:
+                        A = A[:, 16:-16, 58:-58]
+
             else:
                 A = np.load(A_path)
-            B = np.load(B_path)[:, 112:-112, 58:-58]
+
+            B = np.load(B_path)
+            if 'resnet' in self.opt.netG:
+                if B.shape[1] == 1024:
+                    B = B[:, 112:-112, 58:-58]
+                elif B.shape[1] == 512:
+                    B = B[:, 16:-16, 58:-58]
 
         else:
             AB_path = self.AB_paths[index]
