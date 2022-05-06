@@ -59,17 +59,17 @@ def main(opt):
                     # image_realA[1]/=opt.A_ch1_scalefactor
                     arr_realA = image_realA.cpu().float().numpy()
                     arr_realA[0] = arr_realA[0].astype(int)
-                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "realA.npy"), arr_realA)
+                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "realA.npy"), arr_realA[0])
                 
                     image_realB = visuals['real_B'][0].data
                     image_realB[0]/=opt.B_ch0_scalefactor
                     arr_realB = image_realB.cpu().float().numpy().astype(int)
-                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "realB.npy"), arr_realB)
+                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "realB.npy"), arr_realB[0])
                 
                     image_fakeB = visuals['fake_B'][0].data
                     image_fakeB[0]/=opt.B_ch0_scalefactor
                     arr_fakeB = image_fakeB.cpu().float().numpy().astype(int)
-                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "fakeB.npy"), arr_fakeB)
+                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "fakeB.npy"), arr_fakeB[0])
 
                     losses = model.get_current_losses()
                     loss_line = "total_iters={}, epoch={}, epoch_iter={} : G_GAN={}, G_pix={}, G_channel={}, D_real={}, D_fake={}".format(
@@ -165,13 +165,13 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
             # realA[1]/=opt.A_ch1_scalefactor
             arr_realA = realA.numpy()
             arr_realA[0] = arr_realA[0].astype(int)
-            np.save(os.path.join(opt.checkpoints_dir, opt.name, "realA_valid{}.npy".format(i)), arr_realA)
+            np.save(os.path.join(opt.checkpoints_dir, opt.name, "realA_valid{}.npy".format(i)), arr_realA[0])
         
             arr_realB = realB[0].numpy().astype(int)
-            np.save(os.path.join(opt.checkpoints_dir, opt.name, "realB_valid{}.npy".format(i)), arr_realB)
+            np.save(os.path.join(opt.checkpoints_dir, opt.name, "realB_valid{}.npy".format(i)), arr_realB[0])
         
             arr_fakeB =fakeB[0].numpy().astype(int)
-            np.save(os.path.join(opt.checkpoints_dir, opt.name, "fakeB_valid{}.npy".format(i)), arr_fakeB)
+            np.save(os.path.join(opt.checkpoints_dir, opt.name, "fakeB_valid{}.npy".format(i)), arr_fakeB[0])
 
     if realA.shape[2] == 800: # induction view
         bias_mu_over20, bias_sigma_over20 = stats.norm.fit(losses_event_over20_fractional)

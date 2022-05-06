@@ -8,13 +8,14 @@ from matplotlib.backends.backend_pdf import PdfPages
 plt.rc('font', family='serif')
 
 def plot_images(realA, realB, fakeB, auto_crop, pdf):
-    adc_max = max([np.amax(realB[0]), np.amax(fakeB[0])])
-    adc_min = min([np.amin(realB[0]), np.amin(fakeB[0])])
-    adc_abs_max = np.abs(adc_max) if np.abs(adc_max) > np.abs(adc_min) else np.abs(adc_min)
+    if len(realA.shape) == 3:
+        realA = realA[0]
+        realB = realB[0]
+        fakeB = fakeB[0]
 
-    realA = realA[0]
-    realB = realB[0]
-    fakeB = fakeB[0]
+    adc_max = max([np.amax(realB), np.amax(fakeB)])
+    adc_min = min([np.amin(realB), np.amin(fakeB)])
+    adc_abs_max = np.abs(adc_max) if np.abs(adc_max) > np.abs(adc_min) else np.abs(adc_min)
 
     if realA.shape[0] == 800:
         cmap = 'seismic'
@@ -57,9 +58,10 @@ def plot_images(realA, realB, fakeB, auto_crop, pdf):
         plt.show()
 
 def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf):
-    realA = realA[0]
-    realB = realB[0]
-    fakeB = fakeB[0]
+    if len(realA.shape) == 3:
+        realA = realA[0]
+        realB = realB[0]
+        fakeB = fakeB[0]
 
     if auto_crop:
         non_zeros = np.nonzero(realA)
@@ -151,13 +153,8 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF):
         realA = np.load(os.path.join(input_dir, "realA.npy"))
         realB = np.load(os.path.join(input_dir, "realB.npy"))
         fakeB = np.load(os.path.join(input_dir, "fakeB.npy"))
-
-        if realA.shape[2] == 512:
-            realA = realA[:,16:-16,:]
-            realB = realB[:,16:-16,:]
-            fakeB = fakeB[:,16:-16,:]
             
-        elif realA.shape[1] == 512:
+        if realA.shape[1] == 512:
             realA = realA[:,16:-16,58:-58]
             realB = realB[:,16:-16,58:-58]
             fakeB = fakeB[:,16:-16,58:-58]
