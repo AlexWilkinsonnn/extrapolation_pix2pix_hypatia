@@ -285,7 +285,7 @@ if __name__ == '__main__':
         'name' : "nd_fd_radi_geomservice_U_test",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
-        'input_nc' :  5,
+        'input_nc' :  6,
         'output_nc' : 1,
         'ngf' : 64,
         'ndf' : 64,
