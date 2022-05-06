@@ -15,14 +15,15 @@ def plot_images(realA, realB, fakeB, auto_crop, pdf):
     realA = realA[0]
     realB = realB[0]
     fakeB = fakeB[0]
-    realA = np.ma.masked_where(realA == 0, realA)
 
-    if realA.shape[0] == 480:
-        cmap = 'viridis'
-        vmin, vmax = adc_min, adc_max
-    else:
+    if realA.shape[0] == 800:
         cmap = 'seismic'
         vmin, vmax = -adc_abs_max, adc_abs_max
+    else: 
+        cmap = 'viridis'
+        vmin, vmax = adc_min, adc_max
+
+    realA = np.ma.masked_where(realA == 0, realA)
 
     if auto_crop:
         non_zeros = np.nonzero(realA)
