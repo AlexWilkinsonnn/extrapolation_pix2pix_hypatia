@@ -8,6 +8,5 @@
 
 echo tar_dset.sh
 cd /state/partition1/awilkins
-tar -czf nd_fd_radi_1-8_trainvalid_vtxaligned_noped.tar.gz nd_fd_radi_1-8_vtxaligned_noped
-
+tar -czf nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed.tar.gz nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed/
 

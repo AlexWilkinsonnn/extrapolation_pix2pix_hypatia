@@ -9,6 +9,6 @@
 echo prepare_dset.sh
 cd /state/partition1/awilkins
 #mv /home/awilkins/depos_X_4492_collection_fsb_nu.tar.gz .
-tar -xzf output_1-8_radi_numuCC_vtxalginment_noped_nd_fd_pairs.tar.gz
+tar -xzf output_1-8_radi_numuCC_vtxalignment_noped_morechannels_fddriftfixed_nd_fd_pairs_trainvalid.tar.gz
 
 
