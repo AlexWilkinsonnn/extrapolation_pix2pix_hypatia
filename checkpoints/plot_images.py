@@ -153,7 +153,8 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF):
         realA = np.load(os.path.join(input_dir, "realA.npy"))
         realB = np.load(os.path.join(input_dir, "realB.npy"))
         fakeB = np.load(os.path.join(input_dir, "fakeB.npy"))
-            
+        
+        """
         if realA.shape[1] == 512:
             realA = realA[:,16:-16,58:-58]
             realB = realB[:,16:-16,58:-58]
@@ -163,6 +164,7 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF):
             realA = realA[:,112:-112,58:-58]
             realB = realB[:,112:-112,58:-58]
             fakeB = fakeB[:,112:-112,58:-58]
+        """
 
         plot_images(realA, realB, fakeB, AUTO_CROP, pdf)
         plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf)
