@@ -95,6 +95,8 @@ class Dataset():
             A = A[:-1, :, :]
         else:
             full_mask = np.zeros((1, B.shape[1], B.shape[2])) # Can't be bothered to refactor out the mask object when not in the data so have this.
+            if self.opt.mask_type == 'dont_use':
+              A = A[:-1, :, :]
 
         if not self.opt.unaligned: # Aligned images need the same channels so if input_nc != output_nc there will be zero channels in one of A and B.
             A = A[:self.opt.input_nc, :, :]
