@@ -108,17 +108,19 @@ class Dataset():
 
         B[0]*=self.opt.B_ch0_scalefactor
 
-        if self.opt.input_nc == 1:
+        input_nc = self.opt.input_nc - 1 if self.opt.noise_layer else self.opt.input_nc
+
+        if input_nc == 1:
             A[0]*=self.opt.A_ch0_scalefactor
 
-        elif self.opt.input_nc == 5:
+        elif input_nc == 5:
             A[0]*=self.opt.A_ch0_scalefactor
             A[1]*=self.opt.A_ch1_scalefactor
             A[2]*=self.opt.A_ch2_scalefactor
             A[3]*=self.opt.A_ch3_scalefactor
             A[4]*=self.opt.A_ch4_scalefactor
             
-        elif self.opt.input_nc == 6:
+        elif input_nc == 6:
             A[0]*=self.opt.A_ch0_scalefactor
             A[1]*=self.opt.A_ch1_scalefactor
             A[2]*=self.opt.A_ch2_scalefactor
@@ -158,9 +160,10 @@ class Dataset():
             # if self.opt.using_mask:
             #     mask.append(torch.from_numpy(full_mask[:, :, :]).float())
 
-        # if self.opt.noise_layer:
-        #     noise = torch.randn((1,512,512))
-        #     A = torch.cat((A, noise), 0)
+        if self.opt.noise_layer:
+            # noise RMS is ~4 so use 4/4096 as sigma for Gaussian noise channel
+            noise = torch.normal(0, 0.0009765625, size=(1, A.size()[1], A.size()[2]))
+            A = torch.cat((A, noise), 0)
         
         if self.opt.unaligned:
             return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path, 'mask' : mask}

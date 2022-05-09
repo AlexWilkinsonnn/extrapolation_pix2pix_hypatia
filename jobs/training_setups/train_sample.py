@@ -246,8 +246,8 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
 if __name__ == '__main__':
     options = {
-        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_geomservice_U',
-        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_geomservice_U', # Can be /share/gpu{0,1,2,3}
+        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_geomservice_U_wiredistance',
+        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_geomservice_U_wiredistance', # Can be /share/gpu{0,1,2,3}
         'unaligned' : True,
         'nd_sparse' : True, # nd data is saved in sparse format using the sparse library
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
@@ -283,7 +283,7 @@ if __name__ == '__main__':
         # 'A_ch4_scalefactor' : 0.03225806451612903, # num first pixel triggers. 1/31 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 31]
         # 'A_ch5_scalefactor' : 4.285408185129634, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
         # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
-        'name' : "nd_fd_radi_geomservice_U_test",
+        'name' : "nd_fd_radi_geomservice_U_wiredistance_test",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
         'input_nc' :  6,
@@ -354,6 +354,9 @@ if __name__ == '__main__':
 
     with open(os.path.join(options['checkpoints_dir'], options['name'], "config.yaml"), 'w') as f:
         yaml.dump(options, f)
+
+    if options['noise_layer']:
+        options['input_nc'] += 1
 
     MyTuple = namedtuple('MyTuple', options)  
     opt = MyTuple(**options)
