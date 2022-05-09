@@ -25,11 +25,11 @@ def main(opt):
   f = ROOT.TFile.Open(opt.out_path, "RECREATE")
   t = ROOT.TTree("digs_hits", "ndfdtranslations")
 
-  chs = ROOT.vector("int")(480)
+  chs = ROOT.vector("int")(opt.num_channels)
   t.Branch("channels", chs)
-  digs_pred = ROOT.vector("std::vector<int>")(480)
+  digs_pred = ROOT.vector("std::vector<int>")(opt.num_channels)
   t.Branch("rawdigits_translated", digs_pred)
-  digs_true = ROOT.vector("std::vector<int>")(480)
+  digs_true = ROOT.vector("std::vector<int>")(opt.num_channels)
   t.Branch("rawdigits_true", digs_true)
   packets = ROOT.vector("std::vector<int>")()
   t.Branch("nd_packets", packets)
@@ -88,21 +88,22 @@ def main(opt):
   f.Close()
 
 if __name__ == '__main__':
-  experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14'
+  experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_Z_wiredistance_8'
 
   with open(os.path.join(experiment_dir, 'config.yaml')) as f:
     options = yaml.load(f, Loader=yaml.FullLoader)
 
-  # options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14_latest_T10P2_fdtrue_fdpred_ndin_train9500-19000.root"
-  options['out_path'] = "/state/partition1/awilkins/test.root"
-  options['first_ch_number'] = 14400
+  options['out_path'] = "/state/partition1/awilkins/nd_fd_radi_geomservice_Z_wiredistance_8_losspix_T10P2_fdtrue_fdpred_ndin_valid4202.root"
+  # options['out_path'] = "/state/partition1/awilkins/test.root"
+  options['first_ch_number'] = 14400 # T10P2: 14400
+  options['num_channels'] = 480 # 480, 800
 
-  options['start_i'] = 9500 # -1 for all
-  options['end_i'] = 19000 # -1 for all
+  options['start_i'] = -1 # -1 for all
+  options['end_i'] = -1 # -1 for all
   options['serial_batches'] = True # turn off shuffle so can split the work up
 
   valid = False
-  options['phase'] = 'train' # 'train', 'test'
+  options['phase'] = 'test' # 'train', 'test'
 
   # If data is not on the current node, grab it from the share disk.
   if not os.path.exists(options['dataroot']):
@@ -115,7 +116,7 @@ if __name__ == '__main__':
   # options['no_dropout'] = True
   options['num_threads'] = 1
   options['isTrain'] = False
-  options['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+  options['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
   half_precision = False
   if half_precision:
