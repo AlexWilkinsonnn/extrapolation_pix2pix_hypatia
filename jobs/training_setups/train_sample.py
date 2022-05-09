@@ -252,7 +252,7 @@ if __name__ == '__main__':
         'nd_sparse' : True, # nd data is saved in sparse format using the sparse library
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
         'samples' : 1, # 0 to do samples = ticks//512
-        'mask_type' : 'saved', # 'auto', 'saved', 'none'. 'none_weighted', 'saved_1rms'
+        'mask_type' : 'saved', # 'auto', 'saved', 'none'. 'none_weighted', 'saved_1rms', 'dont_use'
         'rms' : 3.610753167639414, # needed is mask_type='saved_1rms'. collection_fsb_nu: 3.610753167639414, U_fsb_fixedbb_nu: 3.8106195813271166, V_fsb_fixedbb_nu: 3.8106180475002605
         # 'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
         # 'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])

@@ -365,14 +365,17 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
 
             loss_channel = (((mask * target).sum(3) - (mask * output).sum(3)).abs().sum()/mask.sum(3).count_nonzero())/target.size()[0]
             
-        elif mask_type == 'none':
-            if target.size()[2] == 800:
-                raise NotImplementedError("induction view not implemented yet")
+        elif mask_type == 'none' or mask_type == 'dont_use':
             if target.size()[0] > 1:
                 raise NotImplementedError("batch loss not implemented yet")
 
             loss_pix = (output - target).abs().mean()
-            loss_channel = (target.sum(3) - output.sum(3)).abs().sum()/target.size()[2]
+            if target.size()[2] == 800:
+                loss_channel_positive = ((target * (target >= 0)).sum(3) - (output * (target >= 0)).sum(3)).abs().sum()/target.size()[2]
+                loss_channel_negative = ((target * (target < 0)).sum(3) - (output * (target < 0)).sum(3)).abs().sum()/target.size()[2]
+                loss_channel = (loss_channel_negative + loss_channel_positive)/2
+            else:
+                loss_channel = (target.sum(3) - output.sum(3)).abs().sum()/target.size()[2]
 
         elif mask_type == 'none_weighted':
             if target.size()[2] == 800:
