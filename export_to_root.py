@@ -1,9 +1,10 @@
-import os, sys
+import os, sys, re
 from collections import namedtuple
 
 import numpy as np
 import sparse
 import torch, yaml, ROOT
+from array import array
 from tqdm import tqdm
 
 from model import *
@@ -54,6 +55,8 @@ def main(optZ, optU, optV, opt_all):
     t.Branch("rawdigits_true", digs_true)
     packets = ROOT.vector("std::vector<int>")()
     t.Branch("nd_packets", packets)
+    ev_num = array('i', [0])
+    t.Branch("ev_num", ev_num, 'ev_num/I')
 
     opts = [optZ, optU, optV]
     dataset_tests = [dataset_testZ, dataset_testU, dataset_testV]
@@ -70,13 +73,16 @@ def main(optZ, optU, optV, opt_all):
             digs_true[i].clear()
             digs_pred[i].clear()
         packets.clear()
+        ev_num[0] = -1
 
         for i, data in enumerate(dataset_test):
             if opt_all.end_i != -1 and i < opt_all.start_i:
                 continue
             if opt_all.end_i != -1 and i >= opt_all.end_i:
                 break
-            print(i)
+
+            data_name = os.path.basename(data['A_paths'][0])
+            ev_num[0] = int(re.match("([0-9]+)", data_name)[0])
 
             model.set_input(data)
             model.test()
