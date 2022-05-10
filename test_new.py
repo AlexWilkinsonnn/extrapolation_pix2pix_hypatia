@@ -396,7 +396,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_Z_wiredistance_8'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_2'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
@@ -413,7 +413,7 @@ if __name__ == '__main__':
     options['num_threads'] = 1
     options['phase'] = 'test'
     options['isTrain'] = False
-    options['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    options['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     # if options['mask_type'] == 'none_weighted' or options['mask_type'] == 'saved_1rms':
     #     print("How do I want to compare L1 losses for models trained with none_weigthed and saved_time?")
@@ -465,6 +465,9 @@ if __name__ == '__main__':
         options['outer_stride'] = 2
     if 'inner_stride_1' not in options:
         options['inner_stride_1'] = 2
+
+    if options['noise_layer']:
+        options['input_nc'] += 1
 
     print("Using configuration:")
     for key, value in options.items():
