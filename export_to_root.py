@@ -58,32 +58,34 @@ def main(optZ, optU, optV, opt_all):
     ev_num = array('i', [0])
     t.Branch("ev_num", ev_num, 'ev_num/I')
 
-    opts = [optZ, optU, optV]
-    dataset_tests = [dataset_testZ, dataset_testU, dataset_testV]
-    models = [modelZ, modelU, modelV]
-
     ch_to_vecnum = {}
-    for opt in opts:
+    for opt in [optZ, optU, optV]:
         for i in range(opt.num_channels):
             chs[i] = i + opt.first_ch_number
             ch_to_vecnum[i + opt.first_ch_number] = i
 
-    for opt, dataset_test, model in zip(opts, dataset_tests, models):
+    for i, (dataZ, dataU, dataV) in enumerate(zip(dataset_testZ, dataset_testU, dataset_testV)):
+        if opt_all.end_i != -1 and i < opt_all.start_i:
+            continue
+        if opt_all.end_i != -1 and i >= opt_all.end_i:
+            break
+
         for i in range(digs_true.size()):
             digs_true[i].clear()
             digs_pred[i].clear()
         packets.clear()
         ev_num[0] = -1
 
-        for i, data in enumerate(dataset_test):
-            if opt_all.end_i != -1 and i < opt_all.start_i:
-                continue
-            if opt_all.end_i != -1 and i >= opt_all.end_i:
-                break
+        data_name = os.path.basename(dataZ['A_paths'][0])
+        ev_num[0] = int(re.match("([0-9]+)", data_name)[0])
 
-            data_name = os.path.basename(data['A_paths'][0])
-            ev_num[0] = int(re.match("([0-9]+)", data_name)[0])
+        ev_numU = int(re.match("([0-9]+)", os.path.basename(dataU['A_paths'][0]))[0])
+        ev_numV = int(re.match("([0-9]+)", os.path.basename(dataV['A_paths'][0]))[0])
+        if ev_num[0] != ev_numU or ev_num[0] != ev_numV:
+            print(os.path.basename(dataV['A_paths'][0]), os.path.basename(dataV['A_paths'][0]))
+            raise Exception("brokey")
 
+        for data, model, opt in zip([dataZ, dataU, dataV], [modelZ, modelU, modelV], [optZ, optU, optV]):
             model.set_input(data)
             model.test()
 
@@ -125,27 +127,27 @@ def main(optZ, optU, optV, opt_all):
                         packet[2] = adc
                         packets.push_back(packet)
 
-            t.Fill()
+        t.Fill()
 
     f.Write()
     f.Close()
 
 if __name__ == '__main__':
-    experiment_dirZ = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_Z_wiredistance_8'
+    experiment_dirZ = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_Z_wiredistance_UVZvalid_1'
     with open(os.path.join(experiment_dirZ, 'config.yaml')) as f:
         optionsZ = yaml.load(f, Loader=yaml.FullLoader)
     optionsZ['first_ch_number'] = 14400 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsZ['num_channels'] = 480 # 480, 800
-    optionsZ['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsZ['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
-    experiment_dirU = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_U_wiredistance_4'
+    experiment_dirU = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_U_wiredistance_UVZvalid_1'
     with open(os.path.join(experiment_dirU, 'config.yaml')) as f:
         optionsU = yaml.load(f, Loader=yaml.FullLoader)
     optionsU['first_ch_number'] = 12800 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsU['num_channels'] = 800 # 480, 800
     optionsU['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
-    experiment_dirV = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_1'
+    experiment_dirV = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_1'
     with open(os.path.join(experiment_dirV, 'config.yaml')) as f:
         optionsV = yaml.load(f, Loader=yaml.FullLoader)
     optionsV['first_ch_number'] = 13600 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
