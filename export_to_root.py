@@ -6,6 +6,7 @@ import sparse
 import torch, yaml, ROOT
 from array import array
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
 from model import *
 from dataset import *
@@ -140,62 +141,54 @@ if __name__ == '__main__':
         optionsZ = yaml.load(f, Loader=yaml.FullLoader)
     optionsZ['first_ch_number'] = 14400 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsZ['num_channels'] = 480 # 480, 800
-    optionsZ['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsZ['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     experiment_dirU = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_U_wiredistance_UVZvalid_1'
     with open(os.path.join(experiment_dirU, 'config.yaml')) as f:
         optionsU = yaml.load(f, Loader=yaml.FullLoader)
     optionsU['first_ch_number'] = 12800 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsU['num_channels'] = 800 # 480, 800
-    optionsU['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsU['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     experiment_dirV = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_1'
     with open(os.path.join(experiment_dirV, 'config.yaml')) as f:
         optionsV = yaml.load(f, Loader=yaml.FullLoader)
     optionsV['first_ch_number'] = 13600 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsV['num_channels'] = 800 # 480, 800
-    optionsV['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsV['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+
+    for options in [optionsZ, optionsU, optionsV]:
+        options['gpu_ids'] = [0]
+        options['phase'] = 'train' # 'train', 'test'
+        options['num_threads'] = 1
+        options['serial_batches'] = True
+        options['isTrain'] = False
+        # If data is not on the current node, grab it from the share disk.
+        if not os.path.exists(options['dataroot']):
+            options['dataroot'] = options['dataroot_shared_disk']
+        # For resnet dropout is in the middle of a sequential so needs to be commented out to maintain layer indices
+        # For for unet its at the end so can remove it and still load the state_dict (nn.Dropout has no weights so
+        # we don't get an unexpected key error when doing this)
+        # options['no_dropout'] = True
 
     options_all = {}
 
     # options_all['out_path'] = "/state/partition1/awilkins/nd_fd_radi_geomservice_Z_wiredistance_8_losspix_T10P2_fdtrue_fdpred_ndin_valid4202.root"
-    options_all['out_path'] = "/state/partition1/awilkins/UVZtest100.root"
+    options_all['out_path'] = "/state/partition1/awilkins/UVZtest10.root"
 
     options_all['start_i'] = 0  # -1 for all
-    options_all['end_i'] = 100 # -1 for all
-    options_all['serial_batches'] = True # turn off shuffle so can split the work up
+    options_all['end_i'] = 10 # -1 for all
 
     valid = True
-    options_all['phase'] = 'train' # 'train', 'test'
 
-    # If data is not on the current node, grab it from the share disk.
-    for options in [optionsZ, optionsU, optionsV]:
-        if not os.path.exists(options['dataroot']):
-            options['dataroot'] = options['dataroot_shared_disk']
-
-    options_all['gpu_ids'] = [0]
-    # For resnet dropout is in the middle of a sequential so needs to be commented out to maintain layer indices
-    # For for unet its at the end so can remove it and still load the state_dict (nn.Dropout has no weights so
-    # we don't get an unexpected key error when doing this)
-    # options['no_dropout'] = True
-    options_all['num_threads'] = 1
-    options_all['isTrain'] = False
-
-    half_precision = False
-    if half_precision:
-        print("###########################################\n" + 
-            "Using FP16" +
-            "\n###########################################")
-
-    # have replaced valid with a few files of interest
-    test_sample = False
-    if test_sample:
-        print("###########################################\n" + 
-                "Using test_sample" +
-                "\n###########################################")
-
-    print("Using configuration:")
-    for key, value in options.items():
+    print("Using Z configuration:")
+    for key, value in optionsZ.items():
+        print("{}={}".format(key, value))
+    print("Using U configuration:")
+    for key, value in optionsU.items():
+        print("{}={}".format(key, value))
+    print("Using V configuration:")
+    for key, value in optionsV.items():
         print("{}={}".format(key, value))
 
     MyTupleZ = namedtuple('MyTupleZ', optionsZ)
