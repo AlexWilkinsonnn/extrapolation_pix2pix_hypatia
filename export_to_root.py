@@ -59,10 +59,12 @@ def main(optZ, optU, optV, opt_all):
     t.Branch("ev_num", ev_num, 'ev_num/I')
 
     ch_to_vecnum = {}
+    cntr = 0
     for opt in [optZ, optU, optV]:
         for i in range(opt.num_channels):
-            chs[i] = i + opt.first_ch_number
-            ch_to_vecnum[i + opt.first_ch_number] = i
+            chs[cntr] = i + opt.first_ch_number
+            ch_to_vecnum[i + opt.first_ch_number] = cntr
+            cntr += 1
 
     for i, (dataZ, dataU, dataV) in enumerate(zip(dataset_testZ, dataset_testU, dataset_testV)):
         if opt_all.end_i != -1 and i < opt_all.start_i:
@@ -157,10 +159,10 @@ if __name__ == '__main__':
     options_all = {}
 
     # options_all['out_path'] = "/state/partition1/awilkins/nd_fd_radi_geomservice_Z_wiredistance_8_losspix_T10P2_fdtrue_fdpred_ndin_valid4202.root"
-    options_all['out_path'] = "/state/partition1/awilkins/UVZtest.root"
+    options_all['out_path'] = "/state/partition1/awilkins/UVZtest100.root"
 
     options_all['start_i'] = 0  # -1 for all
-    options_all['end_i'] = 10 # -1 for all
+    options_all['end_i'] = 100 # -1 for all
     options_all['serial_batches'] = True # turn off shuffle so can split the work up
 
     valid = True
