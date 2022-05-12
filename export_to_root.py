@@ -12,7 +12,7 @@ from model import *
 from dataset import *
 
 def main(optZ, optU, optV, opt_all):
-    dataset_testZ = CustomDatasetDataLoader(optZ, valid=valid).load_data()
+    dataset_testZ = CustomDatasetDataLoader(optZ, valid=opt_all.valid).load_data()
     dataset_testZ_size = len(dataset_testZ)
     print("Number of test images Z = {}".format(dataset_testZ_size))
 
@@ -21,7 +21,7 @@ def main(optZ, optU, optV, opt_all):
     modelZ.setup(optZ)
     modelZ.eval()
 
-    dataset_testU = CustomDatasetDataLoader(optU, valid=valid).load_data()
+    dataset_testU = CustomDatasetDataLoader(optU, valid=opt_all.valid).load_data()
     dataset_testU_size = len(dataset_testU)
     print("Number of test images U = {}".format(dataset_testU_size))
 
@@ -30,7 +30,7 @@ def main(optZ, optU, optV, opt_all):
     modelU.setup(optU)
     modelU.eval()
 
-    dataset_testV = CustomDatasetDataLoader(optV, valid=valid).load_data()
+    dataset_testV = CustomDatasetDataLoader(optV, valid=opt_all.valid).load_data()
     dataset_testV_size = len(dataset_testV)
     print("Number of test images V = {}".format(dataset_testV_size))
 
@@ -68,7 +68,7 @@ def main(optZ, optU, optV, opt_all):
             cntr += 1
 
     for i, (dataZ, dataU, dataV) in enumerate(zip(dataset_testZ, dataset_testU, dataset_testV)):
-        if opt_all.end_i != -1 and i < opt_all.start_i:
+        if opt_all.start_i != -1 and i < opt_all.start_i:
             continue
         if opt_all.end_i != -1 and i >= opt_all.end_i:
             break
@@ -89,6 +89,21 @@ def main(optZ, optU, optV, opt_all):
             raise Exception("brokey")
 
         for data, model, opt in zip([dataZ, dataU, dataV], [modelZ, modelU, modelV], [optZ, optU, optV]):
+            if opt_all.convert_channelsZ and data['A'].size()[2] == 480:
+                data['A'] = data['A'][:, :5, :, :]
+
+                double_columns = [0,4,7,12,15,19,23,27,31,34,38,42,46,50,54,57,61,76,80,84,88,92,
+                    95,99,103,107,111,115,118,122,126,130,134,138,141,145,149,153,157,161,164,168,
+                    172,176,180,184,187,191,195,199,203,207,211,214,218,222,226,230,234,237,241,245,
+                    249,253,257,260,264,268,272,287,291,295,298,302,306,310,314,318,321,325,329,333,
+                    337,341,344,348,352,356,360,364,367,371,375,379,383,387,391,394,398,402,406,410,
+                    414,417,421,425,429,433,437,440,444,448,452,456,460,463,467,471,475,479]
+                for ch, chVec in enumerate(data['A'][0][4]):
+                    if ch in double_columns:
+                        chVec[:] = 1.0
+                    else:
+                        chVec[:] = 0.0
+
             model.set_input(data)
             model.test()
 
@@ -108,6 +123,14 @@ def main(optZ, optU, optV, opt_all):
             realA = realA[0, 0].numpy().astype(int) # Nd packets adc
             realB = realB[0, 0].numpy().astype(int) # true fd response to nd event
             fakeB = fakeB[0, 0].numpy().astype(int) # pred fd response translated from nd event
+
+            if opt.apply_mask:
+                if ch_offset and tick_offset:
+                    mask = data['mask'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset].numpy().astype(bool)[0, 0]
+                else:
+                    mask = data['mask'].cpu().numpy().astype(bool)[0, 0]
+
+                fakeB = fakeB * mask
             
             for ch_local, adc_vec in enumerate(realB):
                 ch = ch_to_vecnum[ch_local + opt.first_ch_number]
@@ -120,7 +143,7 @@ def main(optZ, optU, optV, opt_all):
                 digs_pred[ch] = ROOT.vector("int")(4492)
                 for tick, adc in enumerate(adc_vec):
                     digs_pred[ch][tick] = int(adc)
-                
+
             for ch_local, adc_vec in enumerate(realA):
                 for tick, adc in enumerate(adc_vec):
                     if adc != 0:
@@ -136,26 +159,36 @@ def main(optZ, optU, optV, opt_all):
     f.Close()
 
 if __name__ == '__main__':
-    experiment_dirZ = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_Z_wiredistance_UVZvalid_1'
+    experiment_dirZ = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_1-8_vtxaligned_noped_morechannels_fddriftfixed_14'
     with open(os.path.join(experiment_dirZ, 'config.yaml')) as f:
         optionsZ = yaml.load(f, Loader=yaml.FullLoader)
     optionsZ['first_ch_number'] = 14400 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsZ['num_channels'] = 480 # 480, 800
-    optionsZ['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsZ['epoch'] = 'latest' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsZ['apply_mask'] = False # Zero out non signal region with the mask (temporary deal with noise artifacts I am seeing atm)
+
+    optionsZ['dataroot'] = '/state/partition1/awilkins/nd_fd_radi_geomservice_Z_wiredistance_UVZvalid'
+    optionsZ['dataroot_shared_disk'] = '/share/gpu3/awilkins/nd_fd_radi_geomservice_Z_wiredistance_UVZvalid' 
+    optionsZ['nd_sparse'] = True
+    optionsZ['input_nc'] = 5
+    optionsZ['channel_offset'] = 0
+    optionsZ['tick_offset'] = 0
 
     experiment_dirU = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_U_wiredistance_UVZvalid_1'
     with open(os.path.join(experiment_dirU, 'config.yaml')) as f:
         optionsU = yaml.load(f, Loader=yaml.FullLoader)
     optionsU['first_ch_number'] = 12800 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsU['num_channels'] = 800 # 480, 800
-    optionsU['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsU['epoch'] = 'best_bias_mu' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsU['apply_mask'] = False
 
-    experiment_dirV = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_1'
+    experiment_dirV = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_2'
     with open(os.path.join(experiment_dirV, 'config.yaml')) as f:
         optionsV = yaml.load(f, Loader=yaml.FullLoader)
     optionsV['first_ch_number'] = 13600 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsV['num_channels'] = 800 # 480, 800
-    optionsV['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsV['epoch'] = 'best_bias_mu' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    optionsV['apply_mask'] = False
 
     for options in [optionsZ, optionsU, optionsV]:
         options['gpu_ids'] = [0]
@@ -174,12 +207,14 @@ if __name__ == '__main__':
     options_all = {}
 
     # options_all['out_path'] = "/state/partition1/awilkins/nd_fd_radi_geomservice_Z_wiredistance_8_losspix_T10P2_fdtrue_fdpred_ndin_valid4202.root"
-    options_all['out_path'] = "/state/partition1/awilkins/UVZtest10.root"
+    options_all['out_path'] = "/state/partition1/awilkins/ndfdT10UVZvalid_Zdoublecols14latest_Ugeomservice1biasmu_Vgeomservice2biasmu_fdtruefdpredndin_3000-3500.root"
 
-    options_all['start_i'] = 0  # -1 for all
-    options_all['end_i'] = 10 # -1 for all
+    options_all['start_i'] = 3000  # -1 for all
+    options_all['end_i'] = -1 # -1 for all
 
-    valid = True
+    options_all['valid'] = True
+
+    options_all['convert_channelsZ'] = True # Convert wire distance Z data to the 5 channel data with the channel indicating if two columns are mapped to a channel
 
     print("Using Z configuration:")
     for key, value in optionsZ.items():
