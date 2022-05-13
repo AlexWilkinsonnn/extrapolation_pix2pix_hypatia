@@ -8,6 +8,7 @@ from array import array
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 
+sys.path.append('/home/awilkins/extrapolation_pix2pix')
 from model import *
 from dataset import *
 
@@ -180,7 +181,7 @@ if __name__ == '__main__':
     optionsU['first_ch_number'] = 12800 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsU['num_channels'] = 800 # 480, 800
     optionsU['epoch'] = 'best_bias_mu' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
-    optionsU['apply_mask'] = False
+    optionsU['apply_mask'] = True
 
     experiment_dirV = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_2'
     with open(os.path.join(experiment_dirV, 'config.yaml')) as f:
@@ -188,7 +189,7 @@ if __name__ == '__main__':
     optionsV['first_ch_number'] = 13600 # T10P2 (Z): 14400, T10P1 (V): 13600, T10P0 (U): 12800
     optionsV['num_channels'] = 800 # 480, 800
     optionsV['epoch'] = 'best_bias_mu' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
-    optionsV['apply_mask'] = False
+    optionsV['apply_mask'] = True
 
     for options in [optionsZ, optionsU, optionsV]:
         options['gpu_ids'] = [0]
@@ -207,9 +208,9 @@ if __name__ == '__main__':
     options_all = {}
 
     # options_all['out_path'] = "/state/partition1/awilkins/nd_fd_radi_geomservice_Z_wiredistance_8_losspix_T10P2_fdtrue_fdpred_ndin_valid4202.root"
-    options_all['out_path'] = "/state/partition1/awilkins/ndfdT10UVZvalid_Zdoublecols14latest_Ugeomservice1biasmu_Vgeomservice2biasmu_fdtruefdpredndin_3000-3500.root"
+    options_all['out_path'] = "/state/partition1/awilkins/ndfdT10UVZvalid_Zdoublecols14latest_Ugeomservice1biasmu_Vgeomservice2biasmu_fdtruefdpredndin_valid4202_4000-4202.root"
 
-    options_all['start_i'] = 3000  # -1 for all
+    options_all['start_i'] = 4000   # -1 for all
     options_all['end_i'] = -1 # -1 for all
 
     options_all['valid'] = True

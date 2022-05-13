@@ -12,3 +12,5 @@ sample/
 tscripts/
 jobs/mean_rms.txt
 results/nd_fd_*
+jobs/exportroot_setups
+
