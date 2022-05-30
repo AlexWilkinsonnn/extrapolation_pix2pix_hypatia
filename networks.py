@@ -135,7 +135,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], no_DataParalle
 
 
 def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal',
-    init_gain=0.02, gpu_ids=[], output_layer='tanh', kernel_size=4, outer_stride=2, inner_stride_1=2):
+    init_gain=0.02, gpu_ids=[], output_layer='tanh', kernel_size=4, outer_stride=2, inner_stride_1=2, padding_type='reflect', downres=False):
     """Create a generator
 
     Parameters:
@@ -144,10 +144,16 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         ngf (int) -- the number of filters in the last conv layer
         netG (str) -- the architecture's name: resnet_9blocks | resnet_6blocks | unet_256 | unet_128
         norm (str) -- the name of normalization layers used in the network: batch | instance | none
-        use_dropout (bool) -- if use dropout layers.
-        init_type (str)    -- the name of our initialization method.
-        init_gain (float)  -- scaling factor for normal, xavier and orthogonal.
-        gpu_ids (int list) -- which GPUs the network runs on: e.g., 0,1,2
+        use_dropout (bool)   -- if use dropout layers.
+        init_type (str)      -- the name of our initialization method.
+        init_gain (float)    -- scaling factor for normal, xavier and orthogonal.
+        gpu_ids (int list)   -- which GPUs the network runs on: e.g., 0,1,2
+        output_layer (str)   -- output layer of G
+        kernel_size (int)    -- kernel size
+        outer_stride (int)   -- strides of outermost layers (for unet only)
+        inner_stride_1 (int) -- strides of first layers after outermost (for unet only)
+        padding_type (str)   -- type of padding to be used in convolutions (only implemented for resnet)
+        downres (bool)       -- if output of G is expected to be smaller than output (with a hardcoded configutation, only for resnet)
 
     Returns a generator
 
@@ -166,10 +172,10 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     norm_layer = get_norm_layer(norm_type=norm)
 
     if netG == 'resnet_9blocks':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer)
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres=downres)
 
     elif netG == 'resnet_6blocks':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer)
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer, padding_type=padding_type, downres=downres)
         
     elif netG == 'unet_128':
         net = UnetGenerator(
@@ -311,7 +317,7 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
             if peak_mask.sum() == 0:
                 return 0, 0
             
-            if (input_chs * peak_mask).sum() == 0:
+            if input_chs.size() == peak_mask.size() and (input_chs * peak_mask).sum() == 0:
                 return 0, 0
 
             # ticks = np.arange(1, 513)
@@ -714,7 +720,7 @@ class ResnetGenerator(nn.Module):
     """
 
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6,
-        padding_type='reflect', output_layer='tanh'):
+        padding_type='reflect', output_layer='tanh', downres=False):
         """Construct a Resnet-based generator
         Parameters:
             input_nc (int)      -- the number of channels in input images
@@ -724,6 +730,8 @@ class ResnetGenerator(nn.Module):
             use_dropout (bool)  -- if use dropout layers
             n_blocks (int)      -- the number of ResNet blocks
             padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
+            output_layer (str)  -- output layer of G
+            downres (bool)      -- if output of G is expected to be smaller than output (with a hardcoded configutation)
         """
         assert(n_blocks >= 0)
         super(ResnetGenerator, self).__init__()
@@ -733,15 +741,32 @@ class ResnetGenerator(nn.Module):
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
 
-        model = [nn.ReflectionPad2d(3),
-                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0, bias=use_bias),
-                 norm_layer(ngf),
-                 nn.ReLU(True)]
+        if padding_type == 'reflect':
+            model = [nn.ReflectionPad2d(3),
+                     nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0, bias=use_bias),
+                     norm_layer(ngf),
+                     nn.ReLU(True)]
+        elif padding_type == 'zeros':
+            model = [nn.Conv2d(input_nc, ngf, kernel_size=7, padding=3, bias=use_bias),
+                     norm_layer(ngf),
+                     nn.ReLU(True)]
+        else:
+            raise NotImplementedError('padding_type %s not implemented' % padding_type)
 
         n_downsampling = 2
         for i in range(n_downsampling):  # add downsampling layers
             mult = 2 ** i
-            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1, bias=use_bias),
+
+            if not downres:
+                stride = 2
+            elif i == 0:
+                stride = 2
+            elif i == 1:
+                stride = (2, 5)
+            else:
+                raise NotImplementedError("brokey")
+
+            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
                       norm_layer(ngf * mult * 2),
                       nn.ReLU(True)]
 
@@ -749,16 +774,33 @@ class ResnetGenerator(nn.Module):
         for i in range(n_blocks):       # add ResNet blocks
             model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
-        for i in range(n_downsampling):  # add upsampling layers
-            mult = 2 ** (n_downsampling - i)
-            model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-                                         kernel_size=3, stride=2,
-                                         padding=1, output_padding=1,
-                                         bias=use_bias),
-                      norm_layer(int(ngf * mult / 2)),
-                      nn.ReLU(True)]
-        model += [nn.ReflectionPad2d(3)]
-        model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
+        if not downres:
+            for i in range(n_downsampling):  # add upsampling layers
+                mult = 2 ** (n_downsampling - i)
+                model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+                                             kernel_size=3, stride=2,
+                                             padding=1, output_padding=1,
+                                             bias=use_bias),
+                          norm_layer(int(ngf * mult / 2)),
+                          nn.ReLU(True)]
+        else:
+            for i in range(n_downsampling):  # no upsampling, just collapse feature dimension
+                mult = 2 ** (n_downsampling - i)
+                model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+                                             kernel_size=3, stride=1,
+                                             padding=1, output_padding=0,
+                                             bias=use_bias),
+                          norm_layer(int(ngf * mult / 2)),
+                          nn.ReLU(True)]
+
+        if padding_type == 'reflect':
+            model += [nn.ReflectionPad2d(3)]
+            model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
+        elif padding_type == 'zeros':
+            model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=3)]
+        else:
+            raise NotImplementedError('padding_type %s not implemented' % padding_type)
+
         if output_layer == 'tanh':
             model += [nn.Tanh()]
 
@@ -816,9 +858,8 @@ class ResnetBlock(nn.Module):
         elif padding_type == 'replicate':
             conv_block += [nn.ReplicationPad2d(1)]
 
-        elif padding_type == 'zero':
+        elif padding_type == 'zeros':
             p = 1
-
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
 
@@ -833,7 +874,7 @@ class ResnetBlock(nn.Module):
         elif padding_type == 'replicate':
             conv_block += [nn.ReplicationPad2d(1)]
 
-        elif padding_type == 'zero':
+        elif padding_type == 'zeros':
             p = 1#
 
         else:

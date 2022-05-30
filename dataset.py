@@ -113,6 +113,12 @@ class Dataset():
         if input_nc == 1:
             A[0]*=self.opt.A_ch0_scalefactor
 
+        elif input_nc == 4:
+            A[0]*=self.opt.A_ch0_scalefactor
+            A[1]*=self.opt.A_ch1_scalefactor
+            A[2]*=self.opt.A_ch2_scalefactor
+            A[3]*=self.opt.A_ch3_scalefactor
+
         elif input_nc == 5:
             A[0]*=self.opt.A_ch0_scalefactor
             A[1]*=self.opt.A_ch1_scalefactor

@@ -245,13 +245,13 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
 if __name__ == '__main__':
     options = {
-        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_geomservice_Z_wiredistance',
-        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_geomservice_Z_wiredistance', # Can be /share/gpu{0,1,2,3}
+        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_geomservice_highres_Z_test2000',
+        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_geomservice_highres_Z_test2000', # Can be /share/gpu{0,1,2,3}
         'unaligned' : True,
         'nd_sparse' : True, # nd data is saved in sparse format using the sparse library
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
         'samples' : 1, # 0 to do samples = ticks//512
-        'mask_type' : 'saved', # 'auto', 'saved', 'none'. 'none_weighted', 'saved_1rms', 'dont_use'
+        'mask_type' : 'auto', # 'auto', 'saved', 'none'. 'none_weighted', 'saved_1rms', 'dont_use'
         'rms' : 3.610753167639414, # needed is mask_type='saved_1rms'. collection_fsb_nu: 3.610753167639414, U_fsb_fixedbb_nu: 3.8106195813271166, V_fsb_fixedbb_nu: 3.8106180475002605
         # 'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
         # 'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])
@@ -265,27 +265,27 @@ if __name__ == '__main__':
         # 'A_ch4_scalefactor' : 1.0, # if two pixel cols map to the wire
         # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
         # nd_fd_radi_geomservice_Z && nd_fd_geomservice_Z_wiredistance
-        # 'A_ch0_scalefactor' : 0.0011695906432746538, # nd adc. 1/855 for nd ADC range in nd_fd_radi_geomservice_Z [4, 855].
-        # 'A_ch3_scalefactor' : 0.023809523809523808, # num nd packets stacked. 1/42 for nd num packets in nd_fd_radi_geomservice_Z [1, 42]
-        # 'A_ch4_scalefactor' : 0.023809523809523808, # num first pixel triggers. 1/42 for nd num first pixel triggers in nd_fd_radi_geomservice_Z [1, 42] 
+        'A_ch0_scalefactor' : 0.0011695906432746538, # nd adc. 1/855 for nd ADC range in nd_fd_radi_geomservice_Z [4, 855].
+        'A_ch3_scalefactor' : 0.023809523809523808, # num nd packets stacked. 1/42 for nd num packets in nd_fd_radi_geomservice_Z [1, 42]
+        'A_ch4_scalefactor' : 0.023809523809523808, # num first pixel triggers. 1/42 for nd num first pixel triggers in nd_fd_radi_geomservice_Z [1, 42] 
         # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.2395 for collection wire pitch of 0.479.
-        # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+        'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
         # nd_fd_radi_geomservice_U && nd_fd_geomservice_U_wiredistance
-        'A_ch0_scalefactor' : 0.0012484394506866417, # nd adc. 1/801 for nd ADC range in nd_fd_radi_geomservice_U [4, 801].
-        'A_ch3_scalefactor' : 0.022222222222222223, # num nd packets stacked. 1/45 for nd num packets in nd_fd_radi_geomservice_U [1, 45]
-        'A_ch4_scalefactor' : 0.022222222222222223, # num first pixel triggers. 1/45 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 45]
-        'A_ch5_scalefactor' : 4.285408185129634, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
-        'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+        # 'A_ch0_scalefactor' : 0.0012484394506866417, # nd adc. 1/801 for nd ADC range in nd_fd_radi_geomservice_U [4, 801].
+        # 'A_ch3_scalefactor' : 0.022222222222222223, # num nd packets stacked. 1/45 for nd num packets in nd_fd_radi_geomservice_U [1, 45]
+        # 'A_ch4_scalefactor' : 0.022222222222222223, # num first pixel triggers. 1/45 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 45]
+        #'A_ch5_scalefactor' : 4.285408185129634, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+        # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
         # nd_fd_geomservice_V && nd_fd_geomservice_V_wiredistance
         # 'A_ch0_scalefactor' : 0.0012484394506866417, # nd adc. 1/562 for nd ADC range in nd_fd_radi_geomservice_V [4, 562].
         # 'A_ch3_scalefactor' : 0.03225806451612903, # num nd packets stacked. 1/31 for nd num packets in nd_fd_radi_geomservice_V [1, 31]
         # 'A_ch4_scalefactor' : 0.03225806451612903, # num first pixel triggers. 1/31 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 31]
         # 'A_ch5_scalefactor' : 4.285408185129634, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
         # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
-        'name' : "nd_fd_radi_geomservice_Z_test",
+        'name' : "nd_fd_radi_geomservice_highres_Z_test",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
-        'input_nc' :  6,
+        'input_nc' :  5,
         'output_nc' : 1,
         'ngf' : 64,
         'ndf' : 64,
@@ -299,11 +299,11 @@ if __name__ == '__main__':
         'serial_batches' : False,
         'num_threads' : 4,
         'batch_size' : 1,
-        'max_dataset_size' : 17000, # Something like this
+        'max_dataset_size' : 1800, # Something like this
         'display_freq' : 2000,
-        'print_freq' : 100,
-        'valid_freq' : 85, # 'epoch' for at the end of each epoch
-        'num_valid' : 20,
+        'print_freq' : 10,
+        'valid_freq' : 500, # 'epoch' for at the end of each epoch
+        'num_valid' : 100,
         'save_latest_freq' : 10000,
         'save_epoch_freq' : 4,
         'phase' : 'train',
@@ -312,24 +312,26 @@ if __name__ == '__main__':
         'beta1' : 0.5,
         # 'lamda_L1_reg' : 0.005, # 0 for no L1 regularisation
         'adam_weight_decay' : 0.0001, # 0 is default, 0.001
-        'lr' : 0.0001, # 0.0002, 0.00005
+        'lr' : 0.00005, # 0.0002, 0.00005
         'gan_mode' : 'vanilla', # 'vanilla', 'lsgan', 'wgangp
         'pool_size' : 0,
         'lr_policy' : 'linear', # 'linear', 'step', 'plateau', 'cosine'
         'lr_decay_iters' : 50,
         'isTrain' : True,
-        'lambda_pix' : 1000, # 1000
+        'lambda_pix' : 0, # 1000
         'nonzero_L1weight': 10, # used for none_weighted mask type
-        'lambda_channel' : 2, # 20
+        'lambda_channel' : 0, # 20
         'G_output_layer' : 'tanh+clampcollection', # 'identity', 'tanh', 'linear', 'relu', 'tanh+clampcollection', 'tanh+clampinduction'
         'direction' : 'AtoB',
         'channel_offset' : 0, # Induction 112, collection 16
         'tick_offset' : 0, # 58 NOTE both channel and tick offsets need to be nonzero for either of them to be applied
-        'unconditional_D' : False, # need True if we want to load into a cycleGAN setup
-        'noise_layer' : True,
+        'unconditional_D' : True, # need True if we want to load into a cycleGAN setup
+        'noise_layer' : False,
         'kernel_size' : (3,5), # 3, 4, (3,5)
         'outer_stride' : 2, # 2, (1,3)
-        'inner_stride_1' : (1,3) # 2, (1,3)
+        'inner_stride_1' : (1,3), # 2, (1,3)
+        'padding_type' : 'zeros', # 'reflect', 'zeros'
+        'downres' : True # output is smaller than input (only implemented for resnet)
     }
     # epoch : 'latest' for test
 
