@@ -6,7 +6,7 @@ import yaml
 
 plt.rc('font', family='serif')
 
-def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID, DATASET):
+def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID, DATASET, NO_PLOT):
     if DATASET == 0:
         train_size = 8000
         valid_freq = 4000
@@ -119,6 +119,9 @@ def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID, DATASET):
             else:
                 print("{: >25}: {: >44} at {: >20} itr {: >6} epochs".format(key, value, best_metrics[key + '_itr'], str(round(best_metrics[key + '_itr']/train_size, 2))))
             
+    if NO_PLOT:
+        return
+
     fig, ax = plt.subplots(figsize=(16,8))
 
     lns1 = ax.plot(x, G_GAN, label="G_GAN", color='b', alpha=0.5)
@@ -174,10 +177,11 @@ def parse_arguments():
     parser.add_argument("--iter", type=int, dest='ITER', default=0,
         help="get losses every n iterations instead of every epoch")
     parser.add_argument("--dataset", type=int, default=0, help="Which iteration of the dataset is being used")
+    parser.add_argument("--no_plot", action='store_true')
 
     args = parser.parse_args()
 
-    return (args.input_dir, args.CH_LOSS, args.OLD_L1, args.ITER, args.VALID, args.dataset)
+    return (args.input_dir, args.CH_LOSS, args.OLD_L1, args.ITER, args.VALID, args.dataset, args.no_plot)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
