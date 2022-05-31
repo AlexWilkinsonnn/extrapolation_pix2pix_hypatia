@@ -57,7 +57,7 @@ def plot_images(realA, realB, fakeB, auto_crop, pdf):
     else:
         plt.show()
 
-def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf):
+def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf, downres):
     if len(realA.shape) == 3:
         realA = realA[0]
         realB = realB[0]
@@ -72,6 +72,15 @@ def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf):
         realA = realA[ch_min:ch_max, tick_min:tick_max]
         realB = realB[ch_min:ch_max, tick_min:tick_max]
         fakeB = fakeB[ch_min:ch_max, tick_min:tick_max]
+
+    if downres:
+        realA_downres = np.zeros((int(realA.shape[0]/4), int(realA.shape[1]/10)))
+        print(realA_downres.shape)
+        for ch, ch_vec in enumerate(realA):
+            for tick, adc in enumerate(ch_vec):
+                realA_downres[int(ch/4), int(tick/10)] += adc
+        print(realA.max(), realA_downres.max())
+        realA = realA_downres
         
     ch = (0, 0)
     for idx, col in enumerate(realA):
@@ -107,7 +116,7 @@ def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf):
     else:
         plt.show()
 
-def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF):
+def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES):
     if PDF:
         pdf = PdfPages('out.pdf')
     else:
@@ -144,7 +153,7 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF):
             """
 
             plot_images(realA, realB, fakeB, AUTO_CROP, pdf)
-            plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf)
+            plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf, DOWNRES)
 
         if PDF:
             pdf.close()
@@ -167,7 +176,7 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF):
         """
 
         plot_images(realA, realB, fakeB, AUTO_CROP, pdf)
-        plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf)
+        plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf, DOWNRES)
 
         if PDF:
             pdf.close()
@@ -185,10 +194,14 @@ def parse_arguments():
     parser.add_argument("-n", type=int, default=3, dest='N')
     parser.add_argument("--auto_crop", action='store_true')
     parser.add_argument("--pdf", action='store_true')
+    parser.add_argument("--downres", action='store_true')
 
     args = parser.parse_args()
 
-    return (args.input_dir, args.VALID_IMAGES, args.N, args.auto_crop, args.pdf)
+    if args.auto_crop and args.downres:
+        raise NotImplementedError("Not sure how to implement auto_crop for the downres translation")
+
+    return (args.input_dir, args.VALID_IMAGES, args.N, args.auto_crop, args.pdf, args.downres)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
