@@ -287,7 +287,7 @@ if __name__ == '__main__':
         'A_ch3_scalefactor' : 0.1, # num nd packets stacked. 1/31 for nd num packets in nd_fd_radi_geomservice_V [1, 10]
         'A_ch4_scalefactor' : 0.1, # num first pixel triggers. 1/31 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 10]
         'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
-        'name' : "nd_fd_radi_geomservice_highres_Z_cropped_4",
+        'name' : "nd_fd_radi_geomservice_highres_Z_cropped_7",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
         'input_nc' :  5,
@@ -295,7 +295,7 @@ if __name__ == '__main__':
         'ngf' : 64,
         'ndf' : 64,
         'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel'
-        'netG' : 'resnet_9blocks', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks'
+        'netG' : 'resnet_9blocks_downres(4,10)_2', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks', 'resnet_9blocks_downres(4,10)_1', 'resnet_9blocks_downres(4,10)_2'
         'n_layers_D' : 4, # -------------- CHANGED FROM THE USUAL 5 --------------
         'norm' : 'batch', # 'batch', 'instance', 'none'
         'init_type' : 'xavier', # 'normal', 'xavier', 'kaiming', 'orthogonal'
@@ -312,11 +312,11 @@ if __name__ == '__main__':
         'save_latest_freq' : 10000,
         'save_epoch_freq' : 4,
         'phase' : 'train',
-        'n_epochs' : 12,
-        'n_epochs_decay' : 7,
+        'n_epochs' : 10,
+        'n_epochs_decay' : 10,
         'beta1' : 0.5,
         # 'lamda_L1_reg' : 0.005, # 0 for no L1 regularisation
-        'adam_weight_decay' : 0.00005, # 0 is default, 0.001
+        'adam_weight_decay' : 0.0001, # 0 is default, 0.001
         'lr' : 0.00005, # 0.0002, 0.00005
         'gan_mode' : 'vanilla', # 'vanilla', 'lsgan', 'wgangp
         'pool_size' : 0,
@@ -325,7 +325,7 @@ if __name__ == '__main__':
         'isTrain' : True,
         'lambda_pix' : 1000, # 1000
         'nonzero_L1weight': 10, # used for none_weighted mask type
-        'lambda_channel' : 20, # 20
+        'lambda_channel' : 1000, # 20
         'G_output_layer' : 'tanh+clampcollection', # 'identity', 'tanh', 'linear', 'relu', 'tanh+clampcollection', 'tanh+clampinduction'
         'direction' : 'AtoB',
         'channel_offset' : 0, # Induction 112, collection 16
@@ -335,8 +335,7 @@ if __name__ == '__main__':
         'kernel_size' : (3,5), # 3, 4, (3,5)
         'outer_stride' : 2, # 2, (1,3)
         'inner_stride_1' : (1,3), # 2, (1,3)
-        'padding_type' : 'zeros', # 'reflect', 'zeros'
-        'downres' : True # output is smaller than input (only implemented for resnet)
+        'padding_type' : 'zeros' # 'reflect', 'zeros'
     }
     # epoch : 'latest' for test
 

@@ -134,14 +134,15 @@ def main(opt):
                 cmap = 'viridis'
                 
             # auto-cropping.
-            non_zeros = np.nonzero(realA)
-            ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
-            ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < realA.shape[0] else realA.shape[0]
-            tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
-            tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < realA.shape[1] else realA.shape[1]
-            realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
-            realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
-            fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
+            if 'downres' not in opt.netG:
+                non_zeros = np.nonzero(realA)
+                ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
+                ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < realA.shape[0] else realA.shape[0]
+                tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
+                tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < realA.shape[1] else realA.shape[1]
+                realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
+                realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
+                fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
 
             if include_realA:
                 ax[0].imshow(np.ma.masked_where(realA_cropped == 0, realA_cropped).T, interpolation='none', aspect='auto', cmap='viridis', origin='lower')
@@ -166,6 +167,13 @@ def main(opt):
             plt.close()
 
             fig, ax = plt.subplots(figsize=(24,8))
+
+            if 'downres' in opt.netG:
+                realA_downres = np.zeros((int(realA.shape[0]/4), int(realA.shape[1]/10)))
+                for ch, ch_vec in enumerate(realA):
+                    for tick, adc in enumerate(ch_vec):
+                        realA_downres[int(ch/4), int(tick/10)] += adc
+                realA = realA_downres
 
             ch = (0, 0)
             for idx, col in enumerate(realA):
@@ -275,14 +283,15 @@ def main(opt):
             vmin = adc_min
             cmap = 'viridis'
 
-        non_zeros = np.nonzero(realA)
-        ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
-        ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < realA.shape[0] else realA.shape[0]
-        tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
-        tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < realA.shape[1] else realA.shape[1]
-        realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
-        realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
-        fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
+        if 'downres' not in opt.netG:
+            non_zeros = np.nonzero(realA)
+            ch_min = non_zeros[0].min() - 10 if (non_zeros[0].min() - 10) > 0 else 0
+            ch_max = non_zeros[0].max() + 11 if (non_zeros[0].max() + 11) < realA.shape[0] else realA.shape[0]
+            tick_min = non_zeros[1].min() - 50 if (non_zeros[1].min() - 50) > 0 else 0
+            tick_max = non_zeros[1].max() + 51 if (non_zeros[1].max() + 51) < realA.shape[1] else realA.shape[1]
+            realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
+            realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
+            fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
 
         if include_realA:
             ax[0].imshow(np.ma.masked_where(realA_cropped == 0, realA_cropped).T, interpolation='none', aspect='auto', cmap='viridis', origin='lower')
@@ -307,6 +316,13 @@ def main(opt):
         plt.close()
 
         fig, ax = plt.subplots(figsize=(24,8))
+        
+        if 'downres' in opt.netG:
+            realA_downres = np.zeros((int(realA.shape[0]/4), int(realA.shape[1]/10)))
+            for ch, ch_vec in enumerate(realA):
+                for tick, adc in enumerate(ch_vec):
+                    realA_downres[int(ch/4), int(tick/10)] += adc
+            realA = realA_downres
 
         ch = (0, 0)
         for idx, col in enumerate(realA):
@@ -396,7 +412,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_2'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_2'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
@@ -445,6 +461,10 @@ if __name__ == '__main__':
 
     if 'unaligned' not in options:
         options['unaligned'] = False
+
+    if 'downres' in options:
+        options['netG'] = 'resnet_9blocks(4,10)_1;
+        options.pop('downres')
 
     half_precision = False
     if half_precision:

@@ -75,11 +75,9 @@ def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf, downres):
 
     if downres:
         realA_downres = np.zeros((int(realA.shape[0]/4), int(realA.shape[1]/10)))
-        print(realA_downres.shape)
         for ch, ch_vec in enumerate(realA):
             for tick, adc in enumerate(ch_vec):
                 realA_downres[int(ch/4), int(tick/10)] += adc
-        print(realA.max(), realA_downres.max())
         realA = realA_downres
         
     ch = (0, 0)

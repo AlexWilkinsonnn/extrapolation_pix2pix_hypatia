@@ -135,14 +135,14 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], no_DataParalle
 
 
 def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal',
-    init_gain=0.02, gpu_ids=[], output_layer='tanh', kernel_size=4, outer_stride=2, inner_stride_1=2, padding_type='reflect', downres=False):
+    init_gain=0.02, gpu_ids=[], output_layer='tanh', kernel_size=4, outer_stride=2, inner_stride_1=2, padding_type='reflect'):
     """Create a generator
 
     Parameters:
         input_nc (int) -- the number of channels in input images
         output_nc (int) -- the number of channels in output images
         ngf (int) -- the number of filters in the last conv layer
-        netG (str) -- the architecture's name: resnet_9blocks | resnet_6blocks | unet_256 | unet_128
+        netG (str) -- the architecture's name: resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} | resnet_6blocks | unet_256 | unet_128
         norm (str) -- the name of normalization layers used in the network: batch | instance | none
         use_dropout (bool)   -- if use dropout layers.
         init_type (str)      -- the name of our initialization method.
@@ -153,7 +153,6 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         outer_stride (int)   -- strides of outermost layers (for unet only)
         inner_stride_1 (int) -- strides of first layers after outermost (for unet only)
         padding_type (str)   -- type of padding to be used in convolutions (only implemented for resnet)
-        downres (bool)       -- if output of G is expected to be smaller than output (with a hardcoded configutation, only for resnet)
 
     Returns a generator
 
@@ -166,16 +165,24 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         Resnet-based generator consists of several Resnet blocks between a few downsampling/upsampling operations.
         We adapt Torch code from Justin Johnson's neural style transfer project (https://github.com/jcjohnson/fast-neural-style).
 
+        Resnet downres versions are the resnet generator with no upsampling component, tuple gives the amount of downsampling.
+
     The generator has been initialized by <init_net>. It uses RELU for non-linearity.
     """
     net = None
     norm_layer = get_norm_layer(norm_type=norm)
 
     if netG == 'resnet_9blocks':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres=downres)
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='none')
 
     elif netG == 'resnet_6blocks':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer, padding_type=padding_type, downres=downres)
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer, padding_type=padding_type, downres='none')
+
+    elif netG == 'resnet_9blocks_downres(4,10)_1':
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_1')
+        
+    elif netG == 'resnet_9blocks_downres(4,10)_2':
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_2')
         
     elif netG == 'unet_128':
         net = UnetGenerator(
@@ -718,9 +725,8 @@ class ResnetGenerator(nn.Module):
     """Resnet-based generator that consists of Resnet blocks between a few downsampling/upsampling operations.
     We adapt Torch code and idea from Justin Johnson's neural style transfer project(https://github.com/jcjohnson/fast-neural-style)
     """
-
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6,
-        padding_type='reflect', output_layer='tanh', downres=False):
+        padding_type='reflect', output_layer='tanh', downres='None'):
         """Construct a Resnet-based generator
         Parameters:
             input_nc (int)      -- the number of channels in input images
@@ -731,7 +737,7 @@ class ResnetGenerator(nn.Module):
             n_blocks (int)      -- the number of ResNet blocks
             padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
             output_layer (str)  -- output layer of G
-            downres (bool)      -- if output of G is expected to be smaller than output (with a hardcoded configutation)
+            downres (str)       -- Type of downres to perform on input: none | (4,10)_{1,2}
         """
         assert(n_blocks >= 0)
         super(ResnetGenerator, self).__init__()
@@ -753,28 +759,37 @@ class ResnetGenerator(nn.Module):
         else:
             raise NotImplementedError('padding_type %s not implemented' % padding_type)
 
-        n_downsampling = 2
-        for i in range(n_downsampling):  # add downsampling layers
-            mult = 2 ** i
+        # add downsampling layers
+        if downres == 'none' or downres == '(4,10)_1':
+            n_downsampling = 2
+            strides = [2, (2,5) if downres == '(4,10)_1' else 2]
+            for i in range(n_downsampling): 
+                mult = 2 ** i
+                stride = strides[i]
 
-            if not downres:
-                stride = 2
-            elif i == 0:
-                stride = 2
-            elif i == 1:
-                stride = (2, 5)
-            else:
-                raise NotImplementedError("brokey")
+                model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
+                          norm_layer(ngf * mult * 2),
+                          nn.ReLU(True)]
 
-            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
-                      norm_layer(ngf * mult * 2),
-                      nn.ReLU(True)]
+        elif downres == '(4,10)_2':
+            n_downsampling = 3
+            strides = [2, 1, (2,5)]
+            for i in range(n_downsampling): 
+                mult = 2 ** i
+                stride = strides[i]
+
+                model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
+                          norm_layer(ngf * mult * 2),
+                          nn.ReLU(True)]
+
+        else:
+            raise NotImplementedError("downres type {} not implemented".format(downres))
 
         mult = 2 ** n_downsampling
         for i in range(n_blocks):       # add ResNet blocks
             model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
-        if not downres:
+        if downres == 'none':
             for i in range(n_downsampling):  # add upsampling layers
                 mult = 2 ** (n_downsampling - i)
                 model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),

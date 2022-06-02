@@ -41,7 +41,7 @@ class Pix2pix():
 
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
-            not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.G_output_layer, opt.kernel_size, opt.outer_stride, opt.inner_stride_1, opt.padding_type, opt.downres)
+            not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.G_output_layer, opt.kernel_size, opt.outer_stride, opt.inner_stride_1, opt.padding_type)
 
         if self.isTrain:  
             if opt.unconditional_D:
