@@ -179,10 +179,10 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer, padding_type=padding_type, downres='none')
 
     elif netG == 'resnet_9blocks_downres(4,10)_1':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_1')
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_1')
         
     elif netG == 'resnet_9blocks_downres(4,10)_2':
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_2')
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_2')
         
     elif netG == 'unet_128':
         net = UnetGenerator(
@@ -726,7 +726,7 @@ class ResnetGenerator(nn.Module):
     We adapt Torch code and idea from Justin Johnson's neural style transfer project(https://github.com/jcjohnson/fast-neural-style)
     """
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6,
-        padding_type='reflect', output_layer='tanh', downres='None'):
+        padding_type='reflect', output_layer='tanh', downres='none'):
         """Construct a Resnet-based generator
         Parameters:
             input_nc (int)      -- the number of channels in input images
