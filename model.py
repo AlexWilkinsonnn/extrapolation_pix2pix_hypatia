@@ -23,7 +23,7 @@ class Pix2pix():
         self.visual_names = []
         self.optimizers = []
         self.image_paths = []
-        self.metric = 0 
+        self.metric = 0
         torch.backends.cudnn.benchmark = True
 
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
@@ -43,7 +43,7 @@ class Pix2pix():
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
             not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.G_output_layer, opt.kernel_size, opt.outer_stride, opt.inner_stride_1, opt.padding_type)
 
-        if self.isTrain:  
+        if self.isTrain:
             if opt.unconditional_D:
                 self.netD = networks.define_D(opt.output_nc, opt.ndf, opt.netD,
                     opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
@@ -268,7 +268,7 @@ class Pix2pix():
             self.fake_B = self.netG.half()(self.real_A)
         else:
             self.fake_B = self.netG(self.real_A)  # G(A)
-        
+
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
         ch_offset = self.opt.channel_offset
@@ -308,7 +308,7 @@ class Pix2pix():
             fake_AB = torch.cat((self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]), 1) if using_offset else torch.cat((self.real_A, self.fake_B), 1)
 
             pred_fake = self.netD(fake_AB)
-        
+
         else:
             pred_fake = self.netD(self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]) if using_offset else self.netD(self.fake_B)
 

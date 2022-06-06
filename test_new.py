@@ -2,7 +2,7 @@ import argparse, os, sys
 from collections import namedtuple
 from operator import itemgetter
 
-import numpy as np 
+import numpy as np
 import torch
 import yaml
 from matplotlib import pyplot as plt
@@ -17,7 +17,7 @@ plt.rc('font', family='serif')
 
 def main(opt):
     out_dir = os.path.join('/home/awilkins/extrapolation_pix2pix/results', opt.name)
-    
+
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
@@ -31,7 +31,7 @@ def main(opt):
     model.eval()
 
     losses_pix, losses_channel = [], []
-    # losses_abs_pix_bias, losses_abs_pix_bias_fractional = [], [] 
+    # losses_abs_pix_bias, losses_abs_pix_bias_fractional = [], []
     # losses_channel_bias, losses_channel_bias_fractional = [], []
     # losses_event_bias, losses_event_bias_fractional = [], []
     losses_event_over20, losses_event_over20_fractional = [], []
@@ -60,7 +60,6 @@ def main(opt):
         model.set_input(data)
         model.test(half_precision)
 
-        print(opt.mask_type)
         visuals = model.get_current_visuals()
         ch_offset, tick_offset = opt.channel_offset, opt.tick_offset
         if ch_offset and tick_offset:
@@ -116,7 +115,7 @@ def main(opt):
             #     np.save('/home/awilkins/extrapolation_pix2pix/sample/realB_Z_example.npy', realB)
             #     np.save('/home/awilkins/extrapolation_pix2pix/sample/fakeB_Z_example.npy', fakeB)
             #     sys.exit()
-            
+
             if include_realA:
                 fig, ax = plt.subplots(1, 3, figsize=(24, 8))
             else:
@@ -132,7 +131,7 @@ def main(opt):
                 vmax = adc_max
                 vmin = adc_min
                 cmap = 'viridis'
-                
+
             # auto-cropping.
             if 'downres' not in opt.netG:
                 non_zeros = np.nonzero(realA)
@@ -143,20 +142,24 @@ def main(opt):
                 realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
                 realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
                 fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
+            else:
+                realA_cropped = realA
+                realB_cropped = realB
+                fakeB_cropped = fakeB
 
             if include_realA:
                 ax[0].imshow(np.ma.masked_where(realA_cropped == 0, realA_cropped).T, interpolation='none', aspect='auto', cmap='viridis', origin='lower')
                 ax[0].set_title("Input", fontsize=16)
-                
+
                 ax[1].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
                 ax[1].set_title("Truth", fontsize=16)
-                
+
                 ax[2].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
                 ax[2].set_title("Output", fontsize=16)
             else:
                 ax[0].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
                 ax[0].set_title("Truth", fontsize=16)
-                
+
                 ax[1].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
                 ax[1].set_title("Output", fontsize=16)
 
@@ -181,7 +184,7 @@ def main(opt):
                     ch = (idx, np.abs(col).sum())
             ch = ch[0]
             start_tick = np.nonzero(realA[ch, :])[0][0] - 200  if np.nonzero(realA[ch, :])[0][0] > 200 else 0
-            end_tick = np.nonzero(realA[ch, :])[0][-1] + 200  if np.nonzero(realA[ch, :])[0][-1] < 4292 else 4292
+            end_tick = np.nonzero(realA[ch, :])[0][-1] + 200  if np.nonzero(realA[ch, :])[0][-1] < realA.shape[1] - 200 else realA.shape[1]
             ticks = np.arange(start_tick + 1, end_tick + 1)
 
             ax.hist(ticks, bins=len(ticks), weights=realB[ch,start_tick:end_tick], histtype='step', label='real FD adc', linewidth=0.7, color='r')
@@ -233,7 +236,7 @@ def main(opt):
     if half_precision:
         pdf2 = PdfPages(os.path.join(out_dir, 'worst_output_images_FP16_epoch{}.pdf'.format(opt.epoch)))
     else:
-        pdf2 = PdfPages(os.path.join(out_dir, 'worst_output_images_epoch{}.pdf'.format(opt.epoch)))    
+        pdf2 = PdfPages(os.path.join(out_dir, 'worst_output_images_epoch{}.pdf'.format(opt.epoch)))
     worst_files = dict(sorted(file_losses.items(), key=itemgetter(1), reverse=True)[:20])
     for i, data in enumerate(dataset_test):
         if data['A_paths'][0] not in worst_files.keys():
@@ -292,20 +295,24 @@ def main(opt):
             realA_cropped = realA[ch_min:ch_max, tick_min:tick_max]
             realB_cropped = realB[ch_min:ch_max, tick_min:tick_max]
             fakeB_cropped = fakeB[ch_min:ch_max, tick_min:tick_max]
+        else:
+            realA_cropped = realA
+            realB_cropped = realB
+            fakeB_cropped = fakeB
 
         if include_realA:
             ax[0].imshow(np.ma.masked_where(realA_cropped == 0, realA_cropped).T, interpolation='none', aspect='auto', cmap='viridis', origin='lower')
             ax[0].set_title("Input", fontsize=16)
-                
+
             ax[1].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
             ax[1].set_title("Truth", fontsize=16)
-                
+
             ax[2].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
             ax[2].set_title("Output", fontsize=16)
         else:
             ax[0].imshow(realB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
             ax[0].set_title("Truth", fontsize=16)
-            
+
             ax[1].imshow(fakeB_cropped.T, interpolation='none', aspect='auto', cmap=cmap, vmin=vmin, vmax=vmax, origin='lower')
             ax[1].set_title("Output", fontsize=16)
 
@@ -316,7 +323,7 @@ def main(opt):
         plt.close()
 
         fig, ax = plt.subplots(figsize=(24,8))
-        
+
         if 'downres' in opt.netG:
             realA_downres = np.zeros((int(realA.shape[0]/4), int(realA.shape[1]/10)))
             for ch, ch_vec in enumerate(realA):
@@ -330,7 +337,7 @@ def main(opt):
                 ch = (idx, np.abs(col).sum())
         ch = ch[0]
         start_tick = np.nonzero(realA[ch, :])[0][0] - 200  if np.nonzero(realA[ch, :])[0][0] > 200 else 0
-        end_tick = np.nonzero(realA[ch, :])[0][-1] + 200  if np.nonzero(realA[ch, :])[0][-1] < 4292 else 4292
+        end_tick = np.nonzero(realA[ch, :])[0][-1] + 200  if np.nonzero(realA[ch, :])[0][-1] < realA.shape[1] - 200 else realA.shape[1]
         ticks = np.arange(start_tick + 1, end_tick + 1)
 
         ax.hist(ticks, bins=len(ticks), weights=realB[ch,start_tick:end_tick], histtype='step', label='real FD adc', linewidth=0.7, color='r')
@@ -371,7 +378,7 @@ def main(opt):
     print("mean_channel_loss={}".format(np.mean(losses_channel)))
 
     fig, ax = plt.subplots(figsize=(12,8))
-    
+
     ax.hist(losses_event_over20_fractional, bins=100, range=(-0.5, 0.5), histtype='step')
     ax.set_title("Event over 20 ADC summed", fontsize=16)
     ax.grid(visible=True)
@@ -382,7 +389,7 @@ def main(opt):
     plt.close()
 
     fig, ax = plt.subplots(figsize=(12,8))
-    
+
     ax.hist(losses_event_underneg20_fractional, bins=100, range=(-0.5, 0.5), histtype='step')
     ax.set_title("Event under -20 ADC sum", fontsize=16)
     ax.grid(visible=True)
@@ -398,12 +405,12 @@ def main(opt):
     with open(os.path.join(out_dir, out_name), 'w') as f:
         f.write("mean_L1_loss={}\n".format(np.mean(losses_pix)))
         f.write("mean_channel_loss={}\n".format(np.mean(losses_channel)))
-        # f.write("mean_abspix_bias={}\n".format(np.mean(losses_abs_pix_bias))) 
-        # f.write("mean_abspix_bias_fractional={}\n".format(np.mean(losses_abs_pix_bias_fractional))) 
-        # f.write("mean_channel_bias={}\n".format(np.mean(losses_channel_bias))) 
-        # f.write("mean_channel_bias_fractional={}\n".format(np.mean(losses_channel_bias_fractional))) 
-        # f.write("mean_event_bias={}\n".format(np.mean(losses_event_bias))) 
-        # f.write("mean_event_bias_fractional={}\n".format(np.mean(losses_event_bias_fractional))) 
+        # f.write("mean_abspix_bias={}\n".format(np.mean(losses_abs_pix_bias)))
+        # f.write("mean_abspix_bias_fractional={}\n".format(np.mean(losses_abs_pix_bias_fractional)))
+        # f.write("mean_channel_bias={}\n".format(np.mean(losses_channel_bias)))
+        # f.write("mean_channel_bias_fractional={}\n".format(np.mean(losses_channel_bias_fractional)))
+        # f.write("mean_event_bias={}\n".format(np.mean(losses_event_bias)))
+        # f.write("mean_event_bias_fractional={}\n".format(np.mean(losses_event_bias_fractional)))
         f.write("mean_event_over20={}\n".format(np.mean(losses_event_over20)))
         f.write("mean_event_over20_fractional={}\n".format(np.mean(losses_event_over20_fractional)))
         f.write("mean_event_underneg20={}\n".format(np.mean(losses_event_underneg20)))
@@ -412,7 +419,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_V_wiredistance_UVZvalid_2'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_highres_Z_cropped_5'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
@@ -429,7 +436,7 @@ if __name__ == '__main__':
     options['num_threads'] = 1
     options['phase'] = 'test'
     options['isTrain'] = False
-    options['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    options['epoch'] = 'bias_good_mu_best_sigma' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     # if options['mask_type'] == 'none_weighted' or options['mask_type'] == 'saved_1rms':
     #     print("How do I want to compare L1 losses for models trained with none_weigthed and saved_time?")
@@ -439,7 +446,7 @@ if __name__ == '__main__':
     #     options['lambda_L1_reg'] = 0
 
     include_realA = True
-    
+
     # True if checkpoint was using nd_fd_radi_1-8_vtxaligned before the nd ped was subtracted
     nd_ped = False
 
@@ -463,19 +470,19 @@ if __name__ == '__main__':
         options['unaligned'] = False
 
     if 'downres' in options:
-        options['netG'] = 'resnet_9blocks(4,10)_1;
+        options['netG'] = 'resnet_9blocks_downres(4,10)_1'
         options.pop('downres')
 
     half_precision = False
     if half_precision:
-        print("###########################################\n" + 
+        print("###########################################\n" +
             "Using FP16" +
             "\n###########################################")
 
     # have replaced valid with a few files of interest
     test_sample = False
     if test_sample:
-        print("###########################################\n" + 
+        print("###########################################\n" +
             "Using test_sample" +
             "\n###########################################")
 
@@ -499,7 +506,7 @@ if __name__ == '__main__':
         "in networks.py when testing them.\n" +
         "Note use_bias=False with batch norm since batch norm has an inbuilt bias term. Since " +
         "batchsize is 1 this batch norm is equivalent to an instance norm but with a bias term " +
-        "included.\n" + 
+        "included.\n" +
         "WARNING: elif kernel_size == (3,5) and outer_stride == (1,3) and inner_stride_1 == (1,3) " +
         "at L497 had outer_stride == 2 for a long time but still worked (somehow?), " +
         "will need to change this back to == 2 for some models" +
