@@ -93,6 +93,9 @@ class Dataset():
         if self.opt.mask_type in ['saved', 'saved_1rms']:
             full_mask = A[-1:, :, :] 
             A = A[:-1, :, :]
+        elif self.opt.mask_type == 'saved_zeropadded':
+            full_mask = A[-1:, :B.shape[1], :B.shape[2]]
+            A = A[:-1, :, :]
         else:
             full_mask = np.zeros((1, B.shape[1], B.shape[2])) # Can't be bothered to refactor out the mask object when not in the data so have this.
             if self.opt.mask_type == 'dont_use':
@@ -170,6 +173,8 @@ class Dataset():
             # noise RMS is ~4 so use 4/4096 as sigma for Gaussian noise channel
             noise = torch.normal(0, 0.0009765625, size=(1, A.size()[1], A.size()[2]))
             A = torch.cat((A, noise), 0)
+
+        print(A.size(), B.size(), mask.size())
         
         if self.opt.unaligned:
             return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path, 'mask' : mask}

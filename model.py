@@ -316,9 +316,9 @@ class Pix2pix():
         # Second, G(A) = B
         # self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         if using_offset:
-            self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.real_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.opt.direction, self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms)
+            self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.fake_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.real_B[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset], self.opt.direction, self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms, self.opt.name)
         else:
-            self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A, self.fake_B, self.real_B, self.opt.direction, self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms)
+            self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A, self.fake_B, self.real_B, self.opt.direction, self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms, self.opt.name)
 
         # combine loss and calculate gradients
         self.loss_G = self.loss_G_GAN + self.opt.lambda_pix * self.loss_G_pix + self.opt.lambda_channel * self.loss_G_channel

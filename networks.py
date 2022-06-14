@@ -142,7 +142,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         input_nc (int) -- the number of channels in input images
         output_nc (int) -- the number of channels in output images
         ngf (int) -- the number of filters in the last conv layer
-        netG (str) -- the architecture's name: resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} | resnet_6blocks | unet_256 | unet_128
+        netG (str) -- the architecture's name: resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} | resnet_9blocks_downres(8,8)_1 | resnet_6blocks | unet_256 | unet_128
         norm (str) -- the name of normalization layers used in the network: batch | instance | none
         use_dropout (bool)   -- if use dropout layers.
         init_type (str)      -- the name of our initialization method.
@@ -183,6 +183,9 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         
     elif netG == 'resnet_9blocks_downres(4,10)_2':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_2')
+
+    elif netG == 'resnet_9blocks_downres(8,8)_1':
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(8,8)_1')
         
     elif netG == 'unet_128':
         net = UnetGenerator(
@@ -293,7 +296,7 @@ def CustomLossHitBiasEstimator(input_, output, target, mask, mask_type):
 
     return loss_abs_pix, loss_abs_pix_fractional,  loss_channel, loss_channel_fractional, loss_event, loss_event_fractional
 
-def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_type, nonzero_L1weight, rms):
+def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_type, nonzero_L1weight, rms, name=''):
     """
     """
     if direction == 'AtoB': # SimEnergyDeposit to RawDigit
@@ -343,9 +346,14 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
             loss_pix = ((peak_mask * output_chs) - (peak_mask * target_chs)).abs().sum()/peak_mask.sum() # L1
             loss_channel = ((peak_mask * target_chs).sum(1) - (peak_mask * output_chs).sum(1)).abs().sum()/peak_mask.sum(1).count_nonzero()
             
-        elif mask_type == 'saved':
+        elif mask_type == 'saved' or mask_type == 'saved_zeropadded':
             if mask.sum() == 0: # NEED OR ELSE OUTPUTS COLLAPSE TO NAN FOR WHATEVER REASON
                 return 0, 0
+
+            if target.size()[2] == 800 or target.size()[2] == 480:
+                induction = target.size()[2] == 800
+            else:
+                induction = False if 'Z' in name else True
 
             # fig, ax = plt.subplots(1, 2)
             # im = target.detach().cpu().numpy()
@@ -356,7 +364,7 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
             # plt.show()
 
             loss_pix = (((mask * output) - (mask * target)).abs().sum()/mask.sum())/target.size()[0]
-            if target.size()[2] == 800: # induction view
+            if induction:
                 loss_channel_positive = ((mask * target * (target >= 0)).sum(3) - (mask * output * (target >= 0)).sum(3)).abs().sum()/mask.sum(3).count_nonzero()
                 loss_channel_negative = ((mask * target * (target < 0)).sum(3) - (mask * output * (target < 0)).sum(3)).abs().sum()/mask.sum(3).count_nonzero()
                 loss_channel = ((loss_channel_negative + loss_channel_positive)/2)/target.size()[0]
@@ -737,7 +745,7 @@ class ResnetGenerator(nn.Module):
             n_blocks (int)      -- the number of ResNet blocks
             padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
             output_layer (str)  -- output layer of G
-            downres (str)       -- Type of downres to perform on input: none | (4,10)_{1,2}
+            downres (str)       -- Type of downres to perform on input: none | (4,10)_{1,2} | (8,8)_1
         """
         assert(n_blocks >= 0)
         super(ResnetGenerator, self).__init__()
@@ -777,6 +785,17 @@ class ResnetGenerator(nn.Module):
             for i in range(n_downsampling): 
                 mult = 2 ** i
                 stride = strides[i]
+
+                model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
+                          norm_layer(ngf * mult * 2),
+                          nn.ReLU(True)]
+
+        elif downres == '(8,8)_1':
+            n_downsampling = 3
+            strides = [2, 2, 2]
+            for i in range(n_downsampling):
+                mult = 2 ** i
+                stride = strides[1]
 
                 model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
                           norm_layer(ngf * mult * 2),
