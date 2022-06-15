@@ -7,7 +7,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 plt.rc('font', family='serif')
 
-def plot_images(realA, realB, fakeB, auto_crop, pdf):
+def plot_images(realA, realB, fakeB, auto_crop, pdf, induction):
     if len(realA.shape) == 3:
         realA = realA[0]
         realB = realB[0]
@@ -17,7 +17,8 @@ def plot_images(realA, realB, fakeB, auto_crop, pdf):
     adc_min = min([np.amin(realB), np.amin(fakeB)])
     adc_abs_max = np.abs(adc_max) if np.abs(adc_max) > np.abs(adc_min) else np.abs(adc_min)
 
-    if realA.shape[0] == 800:
+    # if realA.shape[0] == 800:
+    if induction:
         cmap = 'seismic'
         vmin, vmax = -adc_abs_max, adc_abs_max
     else: 
@@ -74,10 +75,17 @@ def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf, downres):
         fakeB = fakeB[ch_min:ch_max, tick_min:tick_max]
 
     if downres:
-        realA_downres = np.zeros((int(realA.shape[0]/4), int(realA.shape[1]/10)))
+        if downres == '4,10':
+            ch_factor, tick_factor = 4, 10
+        elif downres == '8,8':
+            ch_factor, tick_factor = 8, 8
+        else:
+            raise NotImplementedError()
+            
+        realA_downres = np.zeros((int(realA.shape[0]/ch_factor), int(realA.shape[1]/tick_factor)))
         for ch, ch_vec in enumerate(realA):
             for tick, adc in enumerate(ch_vec):
-                realA_downres[int(ch/4), int(tick/10)] += adc
+                realA_downres[int(ch/ch_factor), int(tick/tick_factor)] += adc
         realA = realA_downres
         
     ch = (0, 0)
@@ -120,6 +128,8 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES):
     else:
         pdf = False
 
+    induction = False if 'Z' in os.path.basename(input_dir) else True
+
     if VALID_IMAGES:
         if N == 5:
             suffixes = ["valid0.npy", "valid1.npy", "valid2.npy","valid3.npy", "valid4.npy"]
@@ -150,7 +160,7 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES):
                 fakeB = fakeB[:,112:-112,58:-58]
             """
 
-            plot_images(realA, realB, fakeB, AUTO_CROP, pdf)
+            plot_images(realA, realB, fakeB, AUTO_CROP, pdf, induction)
             plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf, DOWNRES)
 
         if PDF:
@@ -173,7 +183,7 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES):
             fakeB = fakeB[:,112:-112,58:-58]
         """
 
-        plot_images(realA, realB, fakeB, AUTO_CROP, pdf)
+        plot_images(realA, realB, fakeB, AUTO_CROP, pdf, induction)
         plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf, DOWNRES)
 
         if PDF:
@@ -192,7 +202,7 @@ def parse_arguments():
     parser.add_argument("-n", type=int, default=3, dest='N')
     parser.add_argument("--auto_crop", action='store_true')
     parser.add_argument("--pdf", action='store_true')
-    parser.add_argument("--downres", action='store_true')
+    parser.add_argument("--downres", type=str, default='')
 
     args = parser.parse_args()
 

@@ -22,6 +22,12 @@ def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID, DATASET, NO_PLOT):
     elif DATASET == 4: # high res cropped
         train_size = 15000
         valid_freq = 7500
+    elif DATASET == 5: # high res 8-8 cropped Z
+        train_size = 17000
+        valid_freq = 8500
+    elif DATASET == 6: # high res 8-8 cropped V
+        train_size = 1300
+        valid_freq = 6500
 
     with open(os.path.join(input_dir, "loss.txt"), 'r') as f:
         lines = f.readlines()
