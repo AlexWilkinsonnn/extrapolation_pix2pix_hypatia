@@ -346,7 +346,7 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
             loss_pix = ((peak_mask * output_chs) - (peak_mask * target_chs)).abs().sum()/peak_mask.sum() # L1
             loss_channel = ((peak_mask * target_chs).sum(1) - (peak_mask * output_chs).sum(1)).abs().sum()/peak_mask.sum(1).count_nonzero()
             
-        elif mask_type == 'saved' or mask_type == 'saved_zeropadded':
+        elif mask_type == 'saved' or mask_type == 'saved_fd':
             if mask.sum() == 0: # NEED OR ELSE OUTPUTS COLLAPSE TO NAN FOR WHATEVER REASON
                 return 0, 0
 
