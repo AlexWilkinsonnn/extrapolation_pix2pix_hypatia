@@ -113,7 +113,7 @@ def init_weights(net, init_type='normal', init_gain=0.02):
     net.apply(init_func)  # apply the initialization function <init_func>
 
 
-def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], no_DataParallel=False): # Need no_DataParallel = True to trace.
+def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     """Initialize a network: 1. register CPU/GPU device (with multi-GPU support); 2. initialize the network weights
     Parameters:
         net (network)      -- the network to be initialized
@@ -125,9 +125,11 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], no_DataParalle
     """
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
-        net.to(gpu_ids[0])
-        if not no_DataParallel:
-            net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
+        if gpu_ids == [-1]:
+            net.to(0)
+        else:
+            net.to(gpu_ids[0])
+            net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs, not really using this but code expected this wrapper over the model and I'm lazy
 
     init_weights(net, init_type, init_gain=init_gain)
 
@@ -376,6 +378,8 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
         elif mask_type =='saved_1rms':
             if target.size()[2] == 800:
                 raise NotImplementedError("induction view not implemented yet")
+            if target.size()[0] > 1:
+                raise NotImplementedError("batch loss not implemented yet")
 
             if mask.sum() == 0:
                 return 0, 0
