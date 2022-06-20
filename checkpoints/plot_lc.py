@@ -26,7 +26,7 @@ def main(input_dir, CH_LOSS, OLD_L1, ITER, VALID, DATASET, NO_PLOT):
         train_size = 17000
         valid_freq = 8500
     elif DATASET == 6: # high res 8-8 cropped V
-        train_size = 1300
+        train_size = 13000
         valid_freq = 6500
 
     with open(os.path.join(input_dir, "loss.txt"), 'r') as f:
