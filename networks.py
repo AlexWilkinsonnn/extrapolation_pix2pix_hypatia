@@ -113,7 +113,7 @@ def init_weights(net, init_type='normal', init_gain=0.02):
     net.apply(init_func)  # apply the initialization function <init_func>
 
 
-def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
+def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], no_DataParallel=False):
     """Initialize a network: 1. register CPU/GPU device (with multi-GPU support); 2. initialize the network weights
     Parameters:
         net (network)      -- the network to be initialized
@@ -125,7 +125,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     """
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
-        if gpu_ids == [-1]:
+        if no_DataParallel:
             net.to(0)
         else:
             net.to(gpu_ids[0])
@@ -137,7 +137,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
 
 
 def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, init_type='normal',
-    init_gain=0.02, gpu_ids=[], output_layer='tanh', kernel_size=4, outer_stride=2, inner_stride_1=2, padding_type='reflect'):
+    init_gain=0.02, gpu_ids=[], output_layer='tanh', kernel_size=4, outer_stride=2, inner_stride_1=2, padding_type='reflect', no_DataParallel=False):
     """Create a generator
 
     Parameters:
@@ -200,10 +200,10 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % netG)
 
-    return init_net(net, init_type, init_gain, gpu_ids)
+    return init_net(net, init_type, init_gain, gpu_ids, no_DataParallel)
 
 
-def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_ids=[]):
+def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_ids=[], no_DataParallel=False):
     """Create a discriminator
 
     Parameters:
@@ -248,7 +248,7 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' % netD)
 
-    return init_net(net, init_type, init_gain, gpu_ids)
+    return init_net(net, init_type, init_gain, gpu_ids, no_DataParallel)
 
 
 # from matplotlib import pyplot as plt

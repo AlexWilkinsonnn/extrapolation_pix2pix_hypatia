@@ -41,16 +41,16 @@ class Pix2pix():
 
         # define networks (both generator and discriminator)
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
-            not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.G_output_layer, opt.kernel_size, opt.outer_stride, opt.inner_stride_1, opt.padding_type)
+            not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, opt.G_output_layer, opt.kernel_size, opt.outer_stride, opt.inner_stride_1, opt.padding_type, hasattr(opt, 'no_DataParallel'))
 
         if self.isTrain:
             if opt.unconditional_D:
                 self.netD = networks.define_D(opt.output_nc, opt.ndf, opt.netD,
-                    opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+                    opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids, hasattr(opt, no_DataParallel))
             else:
                 # define a discriminator; conditional GANs need to take both input and output images; Therefore, #channels for D is input_nc + output_nc
                 self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
-                    opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+                    opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids, hasattr(opt, no_DataParallel))
 
         if self.isTrain:
             # define loss functions
@@ -253,7 +253,7 @@ class Pix2pix():
         ch_offset = self.opt.channel_offset
         tick_offset = self.opt.tick_offset
         using_offset = True if ch_offset and tick_offset else False # need to have both non-zero offsets if want to use offset
-        self.mask = self.mask[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset] if using_offset else self.mask
+        self.mask = self.mask[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset] if (using_offset and self.mask) else self.mask
 
     # Need these two for making the torchscript.
     def get_real_A(self):

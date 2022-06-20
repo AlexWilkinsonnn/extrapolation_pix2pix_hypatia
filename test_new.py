@@ -123,7 +123,7 @@ def main(opt):
 
             adc_max = max([realB.max(), fakeB.max()])
             adc_min = min([realB.min(), fakeB.min()])
-            if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.dataroot):
+            if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.experiment_dir):
                 vmax = max(adc_max, -adc_min)
                 vmin = -vmax
                 cmap = 'seismic'
@@ -282,7 +282,7 @@ def main(opt):
 
         adc_max = max([realB.max(), fakeB.max()])
         adc_min = min([realB.min(), fakeB.min()])
-        if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.dataroot):
+        if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.experiment_dir):
             vmax = max(adc_max, -adc_min)
             vmin = -vmax
             cmap = 'seismic'
