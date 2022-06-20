@@ -33,67 +33,59 @@ def main(opt):
         epoch_start_time = time.time()
         epoch_iter = 0
         model.update_learning_rate()
-        
+
         for i, data in enumerate(dataset):
-            for tile_number in range(1):#len(data['A'])):
-                # mask = data['mask'][tile_number]
-                # if opt.using_mask:
-                #     mask.requires_grad = False
-                # tile_data = { 'A' : data['A'][tile_number], 'B' : data['B'][tile_number], 
-                #     'A_paths' : data['A_paths'], 'B_paths': data['B_paths'], 
-                #     'mask' : mask }
-                tile_data = data
-                tile_data['mask'].requires_grad = False
-                # print("{} {} {} {}".format(tile_data['A'].size(), tile_data['B'].size(), tile_data['mask'].size(), tile_data['A_paths'])) 
-                        
-                total_iters += opt.batch_size
-                epoch_iter += opt.batch_size
-                model.set_input(tile_data)
-                model.optimize_parameters()
+            data['mask'].requires_grad = False
+            # print("{} {} {} {}".format(data['A'].size(), data['B'].size(), data['mask'].size(), data['A_paths']))
 
-                if total_iters % opt.display_freq == 0:
-                    visuals = model.get_current_visuals()
-                    
-                    image_realA = visuals['real_A'][0].data # Taking first in the batch to save
-                    image_realA[0]/=opt.A_ch0_scalefactor
-                    # image_realA[1]/=opt.A_ch1_scalefactor
-                    arr_realA = image_realA.cpu().float().numpy()
-                    arr_realA[0] = arr_realA[0].astype(int)
-                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "realA.npy"), arr_realA[0])
-                
-                    image_realB = visuals['real_B'][0].data
-                    image_realB[0]/=opt.B_ch0_scalefactor
-                    arr_realB = image_realB.cpu().float().numpy().astype(int)
-                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "realB.npy"), arr_realB[0])
-                
-                    image_fakeB = visuals['fake_B'][0].data
-                    image_fakeB[0]/=opt.B_ch0_scalefactor
-                    arr_fakeB = image_fakeB.cpu().float().numpy().astype(int)
-                    np.save(os.path.join(opt.checkpoints_dir, opt.name, "fakeB.npy"), arr_fakeB[0])
+            total_iters += opt.batch_size
+            epoch_iter += opt.batch_size
+            model.set_input(data)
+            model.optimize_parameters()
 
-                    losses = model.get_current_losses()
-                    loss_line = "total_iters={}, epoch={}, epoch_iter={} : G_GAN={}, G_pix={}, G_channel={}, D_real={}, D_fake={}".format(
-                        total_iters, epoch, epoch_iter, losses['G_GAN'], losses['G_pix'],
-                        losses['G_channel'], losses['D_real'], losses['D_fake'])
-                    with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
-                        f.write(loss_line + '\n')
-                    
-                elif total_iters % opt.print_freq == 0: # print training losses and save logging information to the disk
-                    losses = model.get_current_losses()
-                    loss_line = "total_iters={}, epoch={}, epoch_iter={} : G_GAN={}, G_pix={}, G_channel={}, D_real={}, D_fake={}".format(
-                        total_iters, epoch, epoch_iter, losses['G_GAN'], losses['G_pix'],
-                        losses['G_channel'], losses['D_real'], losses['D_fake'])
-                    print(loss_line)
-                    with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
-                        f.write(loss_line + '\n')
+            if total_iters % opt.display_freq == 0:
+                visuals = model.get_current_visuals()
 
-                if total_iters % opt.save_latest_freq == 0: # cache our latest model every <save_latest_freq> iterations
-                    print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
-                    save_suffix = 'latest'
-                    model.save_networks(save_suffix)
+                image_realA = visuals['real_A'][0].data # Taking first in the batch to save
+                image_realA[0]/=opt.A_ch0_scalefactor
+                # image_realA[1]/=opt.A_ch1_scalefactor
+                arr_realA = image_realA.cpu().float().numpy()
+                arr_realA[0] = arr_realA[0].astype(int)
+                np.save(os.path.join(opt.checkpoints_dir, opt.name, "realA.npy"), arr_realA[0])
 
-                if opt.valid_freq != 'epoch' and total_iters % opt.valid_freq == 0:
-                    valid(dataset_valid_iterator, dataset_valid, model, opt, epoch, total_iters, best_metrics)
+                image_realB = visuals['real_B'][0].data
+                image_realB[0]/=opt.B_ch0_scalefactor
+                arr_realB = image_realB.cpu().float().numpy().astype(int)
+                np.save(os.path.join(opt.checkpoints_dir, opt.name, "realB.npy"), arr_realB[0])
+
+                image_fakeB = visuals['fake_B'][0].data
+                image_fakeB[0]/=opt.B_ch0_scalefactor
+                arr_fakeB = image_fakeB.cpu().float().numpy().astype(int)
+                np.save(os.path.join(opt.checkpoints_dir, opt.name, "fakeB.npy"), arr_fakeB[0])
+
+                losses = model.get_current_losses()
+                loss_line = "total_iters={}, epoch={}, epoch_iter={} : G_GAN={}, G_pix={}, G_channel={}, D_real={}, D_fake={}".format(
+                    total_iters, epoch, epoch_iter, losses['G_GAN'], losses['G_pix'],
+                    losses['G_channel'], losses['D_real'], losses['D_fake'])
+                with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
+                    f.write(loss_line + '\n')
+
+            elif total_iters % opt.print_freq == 0: # print training losses and save logging information to the disk
+                losses = model.get_current_losses()
+                loss_line = "total_iters={}, epoch={}, epoch_iter={} : G_GAN={}, G_pix={}, G_channel={}, D_real={}, D_fake={}".format(
+                    total_iters, epoch, epoch_iter, losses['G_GAN'], losses['G_pix'],
+                    losses['G_channel'], losses['D_real'], losses['D_fake'])
+                print(loss_line)
+                with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
+                    f.write(loss_line + '\n')
+
+            if total_iters % opt.save_latest_freq == 0: # cache our latest model every <save_latest_freq> iterations
+                print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
+                save_suffix = 'latest'
+                model.save_networks(save_suffix)
+
+            if opt.valid_freq != 'epoch' and total_iters % opt.valid_freq == 0:
+                valid(dataset_valid_iterator, dataset_valid, model, opt, epoch, total_iters, best_metrics)
 
         if epoch % opt.save_epoch_freq == 0: # cache our model every <save_epoch_freq> epochs
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
@@ -132,7 +124,7 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
         visuals = model.get_current_visuals()
         ch_offset, tick_offset = opt.channel_offset, opt.tick_offset
         if ch_offset and tick_offset:
-            realA = visuals['real_A'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset] 
+            realA = visuals['real_A'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
             realB = visuals['real_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
             fakeB = visuals['fake_B'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
             mask = data['mask'].cpu()[:, :, ch_offset:-ch_offset, tick_offset:-tick_offset]
@@ -146,9 +138,9 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
         loss_pix, loss_channel = CustomLoss(realA, fakeB, realB, 'AtoB', mask, opt.B_ch0_scalefactor, opt.mask_type, opt.nonzero_L1weight, opt.rms)
         loss_event_over20 = (fakeB.float() * (fakeB.float() > 20)).sum() - (realB.float() * (realB.float() > 20)).sum()
         loss_event_over20_fractional = loss_event_over20/((realB.float() * (realB.float() > 20)).sum())
-        if realA.shape[2] == 800: # induction view 
+        if realA.shape[2] == 800: # induction view
             loss_event_underneg20 = (fakeB.float() * (fakeB.float() < -20)).sum() - (realB.float() * (realB.float() < -20)).sum()
-            loss_event_underneg20_fractional = loss_event_underneg20/((realB.float() * (realB.float() < -20)).sum())           
+            loss_event_underneg20_fractional = loss_event_underneg20/((realB.float() * (realB.float() < -20)).sum())
         if loss_pix != 0:
             G_pix_losses.append(loss_pix.item())
             G_channel_losses.append(loss_channel.item())
@@ -166,10 +158,10 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
             arr_realA = realA.numpy()
             arr_realA[0] = arr_realA[0].astype(int)
             np.save(os.path.join(opt.checkpoints_dir, opt.name, "realA_valid{}.npy".format(i)), arr_realA[0])
-        
+
             arr_realB = realB[0].numpy().astype(int)
             np.save(os.path.join(opt.checkpoints_dir, opt.name, "realB_valid{}.npy".format(i)), arr_realB[0])
-        
+
             arr_fakeB =fakeB[0].numpy().astype(int)
             np.save(os.path.join(opt.checkpoints_dir, opt.name, "fakeB_valid{}.npy".format(i)), arr_fakeB[0])
 
@@ -182,7 +174,7 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
         bias_mu, bias_sigma = stats.norm.fit(losses_event_over20_fractional)
         bias_mu, bias_sigma = float(bias_mu), float(bias_sigma)
     loss_pix, loss_channel = float(np.mean(G_pix_losses)), float(np.mean(G_channel_losses))
-    
+
     if 'bias_mu' not in best_metrics:
         best_metrics['bias_mu'] = bias_mu
         best_metrics['bias_mu_itr'] = total_itrs
@@ -218,7 +210,7 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
     elif best_metrics['loss_pix'] > loss_pix:
         best_metrics['loss_pix'] = loss_pix
         best_metrics['loss_pix_itr'] = total_itrs
-        model.save_networks("best_loss_pix")        
+        model.save_networks("best_loss_pix")
 
     if 'loss_channel' not in best_metrics:
         best_metrics['loss_channel'] = loss_channel
@@ -227,10 +219,10 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
     elif best_metrics['loss_channel'] > loss_channel:
         best_metrics['loss_channel'] = loss_channel
         best_metrics['loss_channel_itr'] = total_itrs
-        model.save_networks("best_loss_channel")        
-        
+        model.save_networks("best_loss_channel")
+
     print(best_metrics)
-        
+
     with open(os.path.join(options['checkpoints_dir'], options['name'], "best_metrics.yaml"), 'w') as f:
         yaml.dump(best_metrics, f)
 
@@ -238,15 +230,15 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
         total_itrs, epoch, np.mean(G_pix_losses), np.mean(G_channel_losses))
     print(loss_line)
     with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
-        f.write(loss_line + '\n')     
-    
+        f.write(loss_line + '\n')
+
     model.train()
 
 
 if __name__ == '__main__':
     options = {
-        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_geomservice_highres8-8_Z_cropped',
-        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_geomservice_highres8-8_Z_cropped', # Can be /share/gpu{0,1,2,3}
+        'dataroot' : '/state/partition1/awilkins/nd_fd_radi_geomservice_highres8-8_U_cropped',
+        'dataroot_shared_disk' : '/share/gpu3/awilkins/nd_fd_radi_geomservice_highres8-8_U_cropped', # Can be /share/gpu{0,1,2,3}
         'unaligned' : True,
         'nd_sparse' : True, # nd data is saved in sparse format using the sparse library
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
@@ -267,7 +259,7 @@ if __name__ == '__main__':
         # nd_fd_radi_geomservice_Z && nd_fd_geomservice_Z_wiredistance
         # 'A_ch0_scalefactor' : 0.0011695906432746538, # nd adc. 1/855 for nd ADC range in nd_fd_radi_geomservice_Z [4, 855].
         # 'A_ch3_scalefactor' : 0.023809523809523808, # num nd packets stacked. 1/42 for nd num packets in nd_fd_radi_geomservice_Z [1, 42]
-        # 'A_ch4_scalefactor' : 0.023809523809523808, # num first pixel triggers. 1/42 for nd num first pixel triggers in nd_fd_radi_geomservice_Z [1, 42] 
+        # 'A_ch4_scalefactor' : 0.023809523809523808, # num first pixel triggers. 1/42 for nd num first pixel triggers in nd_fd_radi_geomservice_Z [1, 42]
         # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.2395 for collection wire pitch of 0.479.
         # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
         # nd_fd_radi_geomservice_U && nd_fd_geomservice_U_wiredistance
@@ -288,30 +280,31 @@ if __name__ == '__main__':
         # 'A_ch4_scalefactor' : 0.1, # num first pixel triggers. 1/10 for nd num first pixel triggers in nd_fd_radi_geomservice_highres_Z_cropped [1, 10]
         # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
         # nd_fd_geomservice_highres8-8_Z_cropped
-        'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/338 for nd ADC range in nd_fd_radi_geomservice_highres8-8_Z_cropped [4, 338].
-        'A_ch3_scalefactor' : 0.08333333333333333, # num nd packets stacked. 1/12 for nd num packets in nd_fd_radi_geomservice_highres8-8_Z_cropped [1, 12]
-        'A_ch4_scalefactor' : 0.08333333333333333, # num first pixel triggers. 1/12 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_Z_cropped [1, 12]
-        'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+        # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/338 for nd ADC range in nd_fd_radi_geomservice_highres8-8_Z_cropped [4, 338].
+        # 'A_ch3_scalefactor' : 0.08333333333333333, # num nd packets stacked. 1/12 for nd num packets in nd_fd_radi_geomservice_highres8-8_Z_cropped [1, 12]
+        # 'A_ch4_scalefactor' : 0.08333333333333333, # num first pixel triggers. 1/12 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_Z_cropped [1, 12]
+        # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
         # nd_fd_geomservice_highres8-8_U_cropped
-        # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/185 for nd ADC range in nd_fd_radi_geomservice_highres8-8_U_cropped [4, 185].
-        # 'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_U_cropped [1, 4]
-        # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_U_cropped [1, 4]
-        # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+        'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/185 for nd ADC range in nd_fd_radi_geomservice_highres8-8_U_cropped [4, 185].
+        'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_U_cropped [1, 4]
+        'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_U_cropped [1, 4]
+        'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
         # nd_fd_geomservice_highres8-8_V_cropped
         # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/185 for nd ADC range in nd_fd_radi_geomservice_highres8-8_V_cropped [4, 185].
         # 'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
         # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
         # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
-        'name' : "nd_fd_radi_geomservice_highres8-8_Z_cropped_1",
+        'name' : "nd_fd_radi_geomservice_highres8-8_U_cropped_5",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
         'input_nc' :  5,
         'output_nc' : 1,
         'ngf' : 64,
         'ndf' : 64,
-        'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel'
+        'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel', no_D_test'
+        'no_D_test': False, # Test not using an adversarial loss at all
         'netG' : 'resnet_9blocks_downres(8,8)_1', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks', 'resnet_9blocks_downres(4,10)_1', 'resnet_9blocks_downres(4,10)_2', 'resnet_9blocks_downres(8,8)_1'
-        'n_layers_D' : 4, # -------------- CHANGED FROM THE USUAL 5 --------------
+        'n_layers_D' : 3, # -------------- CHANGED FROM THE USUAL 5 --------------
         'norm' : 'batch', # 'batch', 'instance', 'none'
         'init_type' : 'xavier', # 'normal', 'xavier', 'kaiming', 'orthogonal'
         'init_gain' : 0.02,
@@ -319,10 +312,10 @@ if __name__ == '__main__':
         'serial_batches' : False,
         'num_threads' : 4,
         'batch_size' : 1,
-        'max_dataset_size' : 17000, # highres8-8_Z 17000, highres8-8_V 13000
+        'max_dataset_size' : 13000, # highres8-8_Z 17000, highres8-8_{V,U} 13000
         'display_freq' : 2000,
         'print_freq' : 100,
-        'valid_freq' : 8500, # 'epoch' for at the end of each epoch
+        'valid_freq' : 6500, # 'epoch' for at the end of each epoch
         'num_valid' : 1000,
         'save_latest_freq' : 10000,
         'save_epoch_freq' : 4,
@@ -331,8 +324,8 @@ if __name__ == '__main__':
         'n_epochs_decay' : 10,
         'beta1' : 0.5,
         # 'lamda_L1_reg' : 0.005, # 0 for no L1 regularisation
-        'adam_weight_decay' : 0.001, # 0 is default, 0.001
-        'lr' : 0.0001, # 0.0002, 0.00005
+        'adam_weight_decay' : 0.0001, # 0 is default, 0.001
+        'lr' : 0.00005, # 0.0002, 0.00005
         'gan_mode' : 'vanilla', # 'vanilla', 'lsgan', 'wgangp
         'pool_size' : 0,
         'lr_policy' : 'linear', # 'linear', 'step', 'plateau', 'cosine'
@@ -341,7 +334,7 @@ if __name__ == '__main__':
         'lambda_pix' : 1000, # 1000
         'nonzero_L1weight': 10, # used for none_weighted mask type
         'lambda_channel' : 2, # 20
-        'G_output_layer' : 'tanh+clampcollection', # 'identity', 'tanh', 'linear', 'relu', 'tanh+clampcollection', 'tanh+clampinduction'
+        'G_output_layer' : 'tanh+clampinduction', # 'identity', 'tanh', 'linear', 'relu', 'tanh+clampcollection', 'tanh+clampinduction'
         'direction' : 'AtoB',
         'channel_offset' : 0, # Induction 112, collection 16
         'tick_offset' : 0, # 58 NOTE both channel and tick offsets need to be nonzero for either of them to be applied
@@ -364,7 +357,7 @@ if __name__ == '__main__':
 
     if not os.path.exists(os.path.join(options['checkpoints_dir'], options['name'])):
         os.makedirs(os.path.join(options['checkpoints_dir'], options['name']))
-    
+
 #    else:
 #        answer = ''
 #        while (answer != 'y') and (answer != 'n'):
@@ -378,7 +371,7 @@ if __name__ == '__main__':
     if options['noise_layer']:
         options['input_nc'] += 1
 
-    MyTuple = namedtuple('MyTuple', options)  
+    MyTuple = namedtuple('MyTuple', options)
     opt = MyTuple(**options)
 
     main(opt)

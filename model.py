@@ -321,7 +321,10 @@ class Pix2pix():
             self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(self.real_A, self.fake_B, self.real_B, self.opt.direction, self.mask, self.opt.B_ch0_scalefactor, self.opt.mask_type, self.opt.nonzero_L1weight, self.opt.rms, self.opt.name)
 
         # combine loss and calculate gradients
-        self.loss_G = self.loss_G_GAN + self.opt.lambda_pix * self.loss_G_pix + self.opt.lambda_channel * self.loss_G_channel
+        if self.opt.no_D_test:
+            self.loss_G = self.opt.lambda_pix * self.loss_G_pix + self.opt.lambda_channel * self.loss_G_channel
+        else:
+            self.loss_G = self.loss_G_GAN + self.opt.lambda_pix * self.loss_G_pix + self.opt.lambda_channel * self.loss_G_channel
         self.loss_G.backward()
 
     def optimize_parameters(self):
