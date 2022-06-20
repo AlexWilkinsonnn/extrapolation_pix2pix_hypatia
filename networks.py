@@ -144,7 +144,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         input_nc (int) -- the number of channels in input images
         output_nc (int) -- the number of channels in output images
         ngf (int) -- the number of filters in the last conv layer
-        netG (str) -- the architecture's name: resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} | resnet_9blocks_downres(8,8)_1 | resnet_6blocks | unet_256 | unet_128
+        netG (str) -- the architecture's name: resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} | resnet_9blocks_downres(8,8)_{1,2} | resnet_6blocks | unet_256 | unet_128
         norm (str) -- the name of normalization layers used in the network: batch | instance | none
         use_dropout (bool)   -- if use dropout layers.
         init_type (str)      -- the name of our initialization method.
@@ -159,7 +159,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
     Returns a generator
 
     Our current implementation provides two types of generators:
-        U-Net: [unet_128] (for multiples of 128x128 input images) and 
+        U-Net: [unet_128] (for multiples of 128x128 input images) and
         [unet_256] (for multiples of 256x256 input images)
         The original U-Net paper: https://arxiv.org/abs/1505.04597
 
@@ -182,13 +182,16 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
 
     elif netG == 'resnet_9blocks_downres(4,10)_1':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_1')
-        
+
     elif netG == 'resnet_9blocks_downres(4,10)_2':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(4,10)_2')
 
     elif netG == 'resnet_9blocks_downres(8,8)_1':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(8,8)_1')
-        
+
+    elif netG == 'resnet_9blocks_downres(8,8)_2':
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(8,8)_2')
+
     elif netG == 'unet_128':
         net = UnetGenerator(
             input_nc, output_nc, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout, output_layer=output_layer, kernel_size=kernel_size, outer_stride=outer_stride, inner_stride_1=inner_stride_1)
@@ -260,7 +263,7 @@ def CustomLossHitBiasEstimator(input_, output, target, mask, mask_type):
     if mask_type == 'saved':
         if mask.sum() == 0: # NEED OR ELSE OUTPUTS COLLAPSE TO NAN FOR WHATEVER REASON
             return 0, 0, 0, 0, 0, 0
-        
+
         loss_abs_pix = ((mask * output).abs() - (mask * target).abs()).sum()/mask.sum()
 
         denom = (mask * target).abs()
@@ -328,7 +331,7 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
 
             if peak_mask.sum() == 0:
                 return 0, 0
-            
+
             if input_chs.size() == peak_mask.size() and (input_chs * peak_mask).sum() == 0:
                 return 0, 0
 
@@ -347,7 +350,7 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
 
             loss_pix = ((peak_mask * output_chs) - (peak_mask * target_chs)).abs().sum()/peak_mask.sum() # L1
             loss_channel = ((peak_mask * target_chs).sum(1) - (peak_mask * output_chs).sum(1)).abs().sum()/peak_mask.sum(1).count_nonzero()
-            
+
         elif mask_type == 'saved' or mask_type == 'saved_fd':
             if mask.sum() == 0: # NEED OR ELSE OUTPUTS COLLAPSE TO NAN FOR WHATEVER REASON
                 return 0, 0
@@ -385,11 +388,11 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
                 return 0, 0
 
             loss_pix = ((mask * output) - (mask * target)).abs()
-            loss_pix[loss_pix <= (rms*B_ch0_scalefactor)] = 0 
+            loss_pix[loss_pix <= (rms*B_ch0_scalefactor)] = 0
             loss_pix = (loss_pix.sum()/mask.sum())/target.size()[0]
 
             loss_channel = (((mask * target).sum(3) - (mask * output).sum(3)).abs().sum()/mask.sum(3).count_nonzero())/target.size()[0]
-            
+
         elif mask_type == 'none' or mask_type == 'dont_use':
             if target.size()[0] > 1:
                 raise NotImplementedError("batch loss not implemented yet")
@@ -546,11 +549,11 @@ class UnetGenerator(nn.Module):
         elif kernel_size == (3,5) and outer_stride == 2 and inner_stride_1 == (1,3):
             paddings = { 'inner' : (1,2), 'outer' : (1,2), 'in1' : 1 }
             output_paddings = { 'inner' : 1, 'outer' : (1,1), 'in1' : 0 }
-        elif kernel_size == 3 and outer_stride == (1,3) and inner_stride_1 == (1,3): 
+        elif kernel_size == 3 and outer_stride == (1,3) and inner_stride_1 == (1,3):
             paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
             output_paddings = { 'inner' : 1, 'outer' : (0,2), 'in1' : (0,2) }
 
-        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True, 
+        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True,
                                              kernel_size=kernel_size, padding=paddings['inner'], output_padding=output_paddings['inner'])  # add the innermost layer
         for i in range(num_downs - 5):          # add intermediate layers with ngf * 8 filters
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout,
@@ -560,7 +563,7 @@ class UnetGenerator(nn.Module):
                                              padding=paddings['inner'], output_padding=output_paddings['inner'])
         unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer, kernel_size=kernel_size,
                                              padding=paddings['inner'], output_padding=output_paddings['inner'])
-        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer, kernel_size=kernel_size, 
+        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer, kernel_size=kernel_size,
                                              stride=inner_stride_1, padding=paddings['in1'], output_padding=output_paddings['in1']) # , in1=True) # in1=True for legacy, uncomment when needed
         self.model = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer, output_layer=output_layer,
                                              kernel_size=kernel_size, stride=outer_stride, padding=paddings['outer'], output_padding=output_paddings['outer'])  # add the outermost layer
@@ -573,7 +576,7 @@ class UnetGenerator(nn.Module):
 class PrintLayer(nn.Module):
     def __init__(self):
         super(PrintLayer, self).__init__()
-    
+
     def forward(self, x):
         print(x.size())
         return x
@@ -749,7 +752,7 @@ class ResnetGenerator(nn.Module):
             n_blocks (int)      -- the number of ResNet blocks
             padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
             output_layer (str)  -- output layer of G
-            downres (str)       -- Type of downres to perform on input: none | (4,10)_{1,2} | (8,8)_1
+            downres (str)       -- Type of downres to perform on input: none | (4,10)_{1,2} | (8,8)_{1,2}
         """
         assert(n_blocks >= 0)
         super(ResnetGenerator, self).__init__()
@@ -775,7 +778,7 @@ class ResnetGenerator(nn.Module):
         if downres == 'none' or downres == '(4,10)_1':
             n_downsampling = 2
             strides = [2, (2,5) if downres == '(4,10)_1' else 2]
-            for i in range(n_downsampling): 
+            for i in range(n_downsampling):
                 mult = 2 ** i
                 stride = strides[i]
 
@@ -786,7 +789,7 @@ class ResnetGenerator(nn.Module):
         elif downres == '(4,10)_2':
             n_downsampling = 3
             strides = [2, 1, (2,5)]
-            for i in range(n_downsampling): 
+            for i in range(n_downsampling):
                 mult = 2 ** i
                 stride = strides[i]
 
@@ -797,6 +800,17 @@ class ResnetGenerator(nn.Module):
         elif downres == '(8,8)_1':
             n_downsampling = 3
             strides = [2, 2, 2]
+            for i in range(n_downsampling):
+                mult = 2 ** i
+                stride = strides[1]
+
+                model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
+                          norm_layer(ngf * mult * 2),
+                          nn.ReLU(True)]
+
+        elif downres == '(8,8)_2':
+            n_downsampling = 5
+            strides = [2, 2, 2, 2, 2]
             for i in range(n_downsampling):
                 mult = 2 ** i
                 stride = strides[1]
@@ -821,6 +835,25 @@ class ResnetGenerator(nn.Module):
                                              bias=use_bias),
                           norm_layer(int(ngf * mult / 2)),
                           nn.ReLU(True)]
+
+        if downres == '(8,8)_2':
+            for i in range(n_downsampling):  # add some upsampling layers and collapse the remaining feature dimension
+                mult = 2 ** (n_downsampling - i)
+                if i < 2:
+                    model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+                                                 kernel_size=3, stride=2,
+                                                 padding=1, output_padding=1,
+                                                 bias=use_bias),
+                              norm_layer(int(ngf * mult / 2)),
+                              nn.ReLU(True)]
+                else:
+                    model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+                                                 kernel_size=3, stride=1,
+                                                 padding=1, output_padding=0,
+                                                 bias=use_bias),
+                              norm_layer(int(ngf * mult / 2)),
+                              nn.ReLU(True)]
+
         else:
             for i in range(n_downsampling):  # no upsampling, just collapse feature dimension
                 mult = 2 ** (n_downsampling - i)

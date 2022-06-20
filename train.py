@@ -294,7 +294,7 @@ if __name__ == '__main__':
         # 'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
         # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
         # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
-        'name' : "nd_fd_radi_geomservice_highres8-8_U_cropped_5",
+        'name' : "nd_fd_radi_geomservice_highres8-8_U_cropped_7",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
         'input_nc' :  5,
@@ -302,8 +302,8 @@ if __name__ == '__main__':
         'ngf' : 64,
         'ndf' : 64,
         'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel', no_D_test'
-        'no_D_test': False, # Test not using an adversarial loss at all
-        'netG' : 'resnet_9blocks_downres(8,8)_1', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks', 'resnet_9blocks_downres(4,10)_1', 'resnet_9blocks_downres(4,10)_2', 'resnet_9blocks_downres(8,8)_1'
+        'no_D_test': True, # Test not using an adversarial loss at all
+        'netG' : 'resnet_9blocks_downres(8,8)_2', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks', 'resnet_9blocks_downres(4,10)_{1,2}', 'resnet_9blocks_downres(8,8)_{1,2}'
         'n_layers_D' : 3, # -------------- CHANGED FROM THE USUAL 5 --------------
         'norm' : 'batch', # 'batch', 'instance', 'none'
         'init_type' : 'xavier', # 'normal', 'xavier', 'kaiming', 'orthogonal'
@@ -320,12 +320,12 @@ if __name__ == '__main__':
         'save_latest_freq' : 10000,
         'save_epoch_freq' : 4,
         'phase' : 'train',
-        'n_epochs' : 10,
-        'n_epochs_decay' : 10,
+        'n_epochs' : 12,
+        'n_epochs_decay' : 14,
         'beta1' : 0.5,
         # 'lamda_L1_reg' : 0.005, # 0 for no L1 regularisation
-        'adam_weight_decay' : 0.0001, # 0 is default, 0.001
-        'lr' : 0.00005, # 0.0002, 0.00005
+        'adam_weight_decay' : 0.001, # 0 is default, 0.001, 0.0001
+        'lr' : 0.0001, # 0.0002, 0.00005
         'gan_mode' : 'vanilla', # 'vanilla', 'lsgan', 'wgangp
         'pool_size' : 0,
         'lr_policy' : 'linear', # 'linear', 'step', 'plateau', 'cosine'
