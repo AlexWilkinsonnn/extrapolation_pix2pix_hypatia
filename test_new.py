@@ -123,7 +123,7 @@ def main(opt):
 
             adc_max = max([realB.max(), fakeB.max()])
             adc_min = min([realB.min(), fakeB.min()])
-            if realA.shape[0] == 800:
+            if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.dataroot):
                 vmax = max(adc_max, -adc_min)
                 vmin = -vmax
                 cmap = 'seismic'
@@ -172,10 +172,15 @@ def main(opt):
             fig, ax = plt.subplots(figsize=(24,8))
 
             if 'downres' in opt.netG:
-                realA_downres = np.zeros((int(realA.shape[0]/4), int(realA.shape[1]/10)))
+                if '(4,10)' in opt.netG:
+                    ch_scalefactor, tick_scalefactor = 4, 10
+                elif '(8,8)' in opt.netG:
+                    ch_scalefactor, tick_scalefactor = 8, 8
+
+                realA_downres = np.zeros((int(realA.shape[0]/ch_scalefactor), int(realA.shape[1]/tick_scalefactor)))
                 for ch, ch_vec in enumerate(realA):
                     for tick, adc in enumerate(ch_vec):
-                        realA_downres[int(ch/4), int(tick/10)] += adc
+                        realA_downres[int(ch/ch_scalefactor), int(tick/tick_scalefactor)] += adc
                 realA = realA_downres
 
             ch = (0, 0)
@@ -277,7 +282,7 @@ def main(opt):
 
         adc_max = max([realB.max(), fakeB.max()])
         adc_min = min([realB.min(), fakeB.min()])
-        if realA.shape[0] == 800:
+        if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.dataroot):
             vmax = max(adc_max, -adc_min)
             vmin = -vmax
             cmap = 'seismic'
@@ -325,10 +330,14 @@ def main(opt):
         fig, ax = plt.subplots(figsize=(24,8))
 
         if 'downres' in opt.netG:
-            realA_downres = np.zeros((int(realA.shape[0]/4), int(realA.shape[1]/10)))
+            if '(4,10)' in opt.netG:
+                ch_scalefactor, tick_scalefactor = 4, 10
+            elif '(8,8)' in opt.netG:
+                ch_scalefactor, tick_scalefactor = 8, 8
+            realA_downres = np.zeros((int(realA.shape[0]/ch_scalefactor), int(realA.shape[1]/tick_scalefactor)))
             for ch, ch_vec in enumerate(realA):
                 for tick, adc in enumerate(ch_vec):
-                    realA_downres[int(ch/4), int(tick/10)] += adc
+                    realA_downres[int(ch/ch_scalefactor), int(tick/tick_scalefactor)] += adc
             realA = realA_downres
 
         ch = (0, 0)
@@ -419,7 +428,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_highres_Z_cropped_9'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_highres8-8_U_cropped_4'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
@@ -436,7 +445,7 @@ if __name__ == '__main__':
     options['num_threads'] = 1
     options['phase'] = 'test'
     options['isTrain'] = False
-    options['epoch'] = 'best_bias_mu' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    options['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     # if options['mask_type'] == 'none_weighted' or options['mask_type'] == 'saved_1rms':
     #     print("How do I want to compare L1 losses for models trained with none_weigthed and saved_time?")
