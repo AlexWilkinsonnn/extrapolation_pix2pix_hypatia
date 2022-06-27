@@ -368,13 +368,13 @@ def CustomLoss(input_, output, target, direction, mask, B_ch0_scalefactor, mask_
             # ax[1].imshow(im_masked, aspect='auto', interpolation='none', cmap='jet')
             # plt.show()
 
-            loss_pix = (((mask * output) - (mask * target)).abs().sum()/mask.sum())/target.size()[0]
+            loss_pix = (((mask * output) - (mask * target)).abs().sum()/mask.sum())
             if induction:
                 loss_channel_positive = ((mask * target * (target >= 0)).sum(3) - (mask * output * (target >= 0)).sum(3)).abs().sum()/mask.sum(3).count_nonzero()
                 loss_channel_negative = ((mask * target * (target < 0)).sum(3) - (mask * output * (target < 0)).sum(3)).abs().sum()/mask.sum(3).count_nonzero()
-                loss_channel = ((loss_channel_negative + loss_channel_positive)/2)/target.size()[0]
+                loss_channel = ((loss_channel_negative + loss_channel_positive)/2)
             else:
-                loss_channel = (((mask * target).sum(3) - (mask * output).sum(3)).abs().sum()/mask.sum(3).count_nonzero())/target.size()[0]
+                loss_channel = (((mask * target).sum(3) - (mask * output).sum(3)).abs().sum()/mask.sum(3).count_nonzero())
 
             # print("{} {}".format(loss_pix, loss_channel))
 
@@ -802,7 +802,7 @@ class ResnetGenerator(nn.Module):
             strides = [2, 2, 2]
             for i in range(n_downsampling):
                 mult = 2 ** i
-                stride = strides[1]
+                stride = strides[i]
 
                 model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
                           norm_layer(ngf * mult * 2),
@@ -813,7 +813,7 @@ class ResnetGenerator(nn.Module):
             strides = [2, 2, 2, 2, 2]
             for i in range(n_downsampling):
                 mult = 2 ** i
-                stride = strides[1]
+                stride = strides[i]
 
                 model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
                           norm_layer(ngf * mult * 2),

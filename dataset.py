@@ -91,7 +91,7 @@ class Dataset():
 
         # if self.opt.using_mask: # Keeping mask in last channel of nd image
         if self.opt.mask_type in ['saved', 'saved_1rms']:
-            full_mask = A[-1:, :, :] 
+            full_mask = A[-1:, :, :]
             A = A[:-1, :, :]
 
         elif self.opt.mask_type == 'saved_fd':
@@ -109,7 +109,7 @@ class Dataset():
 
         # Adding back on nd ped for legacy
         if self.nd_ped:
-            A[A != 0] += 74.0 
+            A[A != 0] += 74.0
 
         B[0]*=self.opt.B_ch0_scalefactor
 
@@ -130,7 +130,7 @@ class Dataset():
             A[2]*=self.opt.A_ch2_scalefactor
             A[3]*=self.opt.A_ch3_scalefactor
             A[4]*=self.opt.A_ch4_scalefactor
-            
+
         elif input_nc == 6:
             A[0]*=self.opt.A_ch0_scalefactor
             A[1]*=self.opt.A_ch1_scalefactor
@@ -138,7 +138,7 @@ class Dataset():
             A[3]*=self.opt.A_ch3_scalefactor
             A[4]*=self.opt.A_ch4_scalefactor
             A[5]*=self.opt.A_ch5_scalefactor
-        
+
         A_tiles, B_tiles = [], []
         samples = self.opt.samples if self.opt.samples else A.shape[2] // 512
         mask = [] if self.opt.mask_type == 'saved' else [0]*samples
@@ -220,7 +220,7 @@ class CustomDatasetDataLoader():
                 self.dataset,
                 batch_size=1,
                 shuffle=False,
-                num_workers=0)           
+                num_workers=0)
 
     def load_data(self):
         return self

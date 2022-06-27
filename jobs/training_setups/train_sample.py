@@ -295,14 +295,14 @@ if __name__ == '__main__':
         # 'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
         # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
         # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
-        'name' : "nd_fd_radi_geomservice_highres8-8_U_cropped_8",
+        'name' : "nd_fd_radi_geomservice_highres8-8_U_cropped_14",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
         'input_nc' :  5,
         'output_nc' : 1,
         'ngf' : 64,
         'ndf' : 64,
-        'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel', no_D_test'
+        'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel'
         'no_D_test': False, # Test not using an adversarial loss at all
         'netG' : 'resnet_9blocks_downres(8,8)_2', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks', 'resnet_9blocks_downres(4,10)_{1,2}', 'resnet_9blocks_downres(8,8)_{1,2}'
         'n_layers_D' : 3, # -------------- CHANGED FROM THE USUAL 5 --------------
