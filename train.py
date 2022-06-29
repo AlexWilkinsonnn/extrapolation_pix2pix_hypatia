@@ -303,7 +303,7 @@ if __name__ == '__main__':
         'ndf' : 64,
         'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel'
         'no_D_test': False, # Test not using an adversarial loss at all
-        'netG' : 'resnet_9blocks_downres(8,8)_2', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks', 'resnet_9blocks_downres(4,10)_{1,2}', 'resnet_9blocks_downres(8,8)_{1,2}'
+        'netG' : 'resnet_9blocks_downres(8,8)_2', # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks', 'resnet_9blocks_downres(4,10)_{1,2}', 'resnet_9blocks_downres(8,8)_{1,2,3}'
         'n_layers_D' : 3, # -------------- CHANGED FROM THE USUAL 5 --------------
         'norm' : 'batch', # 'batch', 'instance', 'none'
         'init_type' : 'xavier', # 'normal', 'xavier', 'kaiming', 'orthogonal'

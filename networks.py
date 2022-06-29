@@ -144,7 +144,7 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         input_nc (int) -- the number of channels in input images
         output_nc (int) -- the number of channels in output images
         ngf (int) -- the number of filters in the last conv layer
-        netG (str) -- the architecture's name: resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} | resnet_9blocks_downres(8,8)_{1,2} | resnet_6blocks | unet_256 | unet_128
+        netG (str) -- the architecture's name: resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} | resnet_9blocks_downres(8,8)_{1,2,3} | resnet_6blocks | unet_256 | unet_128
         norm (str) -- the name of normalization layers used in the network: batch | instance | none
         use_dropout (bool)   -- if use dropout layers.
         init_type (str)      -- the name of our initialization method.
@@ -191,6 +191,9 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
 
     elif netG == 'resnet_9blocks_downres(8,8)_2':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(8,8)_2')
+
+    elif netG == 'resnet_9blocks_downres(8,8)_3':
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, output_layer=output_layer, padding_type=padding_type, downres='(8,8)_3')
 
     elif netG == 'unet_128':
         net = UnetGenerator(
@@ -752,7 +755,7 @@ class ResnetGenerator(nn.Module):
             n_blocks (int)      -- the number of ResNet blocks
             padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
             output_layer (str)  -- output layer of G
-            downres (str)       -- Type of downres to perform on input: none | (4,10)_{1,2} | (8,8)_{1,2}
+            downres (str)       -- Type of downres to perform on input: none | (4,10)_{1,2} | (8,8)_{1,2,3}
         """
         assert(n_blocks >= 0)
         super(ResnetGenerator, self).__init__()
@@ -819,10 +822,31 @@ class ResnetGenerator(nn.Module):
                           norm_layer(ngf * mult * 2),
                           nn.ReLU(True)]
 
+        elif downres == '(8,8)_3':
+            n_downsampling = 5
+            strides = [2, 2, 2, 2, 2]
+            more_features = [True, False, True, False, True]
+            mult = 1
+            for i in range(n_downsampling):
+                stride = strides[i]
+                
+                if more_features[i]:    
+                    model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
+                              norm_layer(ngf * mult * 2),
+                              nn.ReLU(True)]
+                    mult *= 2
+
+                else:
+                    model += [nn.Conv2d(ngf * mult, ngf * mult, kernel_size=3, stride=stride, padding=1, bias=use_bias),
+                              norm_layer(ngf * mult),
+                              nn.ReLU(True)]
+
         else:
             raise NotImplementedError("downres type {} not implemented".format(downres))
+        
+        if downres != '(8,8)_3':
+            mult = 2 ** n_downsampling
 
-        mult = 2 ** n_downsampling
         for i in range(n_blocks):       # add ResNet blocks
             model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
 
@@ -836,7 +860,7 @@ class ResnetGenerator(nn.Module):
                           norm_layer(int(ngf * mult / 2)),
                           nn.ReLU(True)]
 
-        if downres == '(8,8)_2':
+        elif downres == '(8,8)_2':
             for i in range(n_downsampling):  # add some upsampling layers and collapse the remaining feature dimension
                 mult = 2 ** (n_downsampling - i)
                 if i < 2:
@@ -853,6 +877,47 @@ class ResnetGenerator(nn.Module):
                                                  bias=use_bias),
                               norm_layer(int(ngf * mult / 2)),
                               nn.ReLU(True)]
+
+        elif downres == '(8,8)_3':
+            more_features_reversed = list(reversed([True, False, True, False, True]))
+
+            for i in range(n_downsampling):  # add some upsampling layers and collapse the remaining feature dimension
+                if i < 2:
+                    if more_features_reversed[i]:
+                        model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+                                                     kernel_size=3, stride=2,
+                                                     padding=1, output_padding=1,
+                                                     bias=use_bias),
+                                  norm_layer(int(ngf * mult / 2)),
+                                  nn.ReLU(True)]
+                        mult = int(mult / 2)
+
+                    else:
+                        model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult),
+                                                     kernel_size=3, stride=2,
+                                                     padding=1, output_padding=1,
+                                                     bias=use_bias),
+                                  norm_layer(int(ngf * mult)),
+                                  nn.ReLU(True)]
+
+
+                else:
+                    if more_features_reversed[i]:
+                        model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
+                                                     kernel_size=3, stride=1,
+                                                     padding=1, output_padding=0,
+                                                     bias=use_bias),
+                                  norm_layer(int(ngf * mult / 2)),
+                                  nn.ReLU(True)]
+                        mult = int(mult / 2)
+
+                    else:
+                        model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult),
+                                                     kernel_size=3, stride=1,
+                                                     padding=1, output_padding=0,
+                                                     bias=use_bias),
+                                  norm_layer(int(ngf * mult)),
+                                  nn.ReLU(True)]
 
         else:
             for i in range(n_downsampling):  # no upsampling, just collapse feature dimension
