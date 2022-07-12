@@ -123,7 +123,7 @@ def main(opt):
 
             adc_max = max([realB.max(), fakeB.max()])
             adc_min = min([realB.min(), fakeB.min()])
-            if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.experiment_dir):
+            if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.name):
                 vmax = max(adc_max, -adc_min)
                 vmin = -vmax
                 cmap = 'seismic'
@@ -282,7 +282,7 @@ def main(opt):
 
         adc_max = max([realB.max(), fakeB.max()])
         adc_min = min([realB.min(), fakeB.min()])
-        if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.experiment_dir):
+        if realA.shape[0] == 800 or (realA.shape[0] != 480 and 'Z' not in opt.name):
             vmax = max(adc_max, -adc_min)
             vmin = -vmax
             cmap = 'seismic'
@@ -428,7 +428,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_highres8-8_U_cropped_4'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_highres8-8_U_cropped_13'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
