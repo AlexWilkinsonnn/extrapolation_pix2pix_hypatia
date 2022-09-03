@@ -139,6 +139,15 @@ class Dataset():
             A[4]*=self.opt.A_ch4_scalefactor
             A[5]*=self.opt.A_ch5_scalefactor
 
+        elif input_nc == 7:
+            A[0]*=self.opt.A_ch0_scalefactor
+            A[1]*=self.opt.A_ch1_scalefactor
+            A[2]*=self.opt.A_ch2_scalefactor
+            A[3]*=self.opt.A_ch3_scalefactor
+            A[4]*=self.opt.A_ch4_scalefactor
+            A[5]*=self.opt.A_ch5_scalefactor
+            A[6]*=self.opt.A_ch6_scalefactor
+
         A_tiles, B_tiles = [], []
         samples = self.opt.samples if self.opt.samples else A.shape[2] // 512
         mask = [] if self.opt.mask_type == 'saved' else [0]*samples

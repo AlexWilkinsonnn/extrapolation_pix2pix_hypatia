@@ -6,6 +6,7 @@
 
 depos_*
 checkpoints/nd_fd_*
+checkpoints/FHC.nogaps.*
 __pycache__/
 checkpoints/test/
 sample/
