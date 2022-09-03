@@ -237,8 +237,8 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
 if __name__ == '__main__':
     options = {
-        'dataroot' : '/state/partition1/awilkins/FHC.nogaps.Z.7chs_NDx',
-        'dataroot_shared_disk' : '/share/gpu1/awilkins/FHC.nogaps.Z.7chs_NDx', # Can be /share/gpu{0,1,2,3}
+        'dataroot' : '/state/partition1/awilkins/FHC.nogaps.U.7chs_NDx',
+        'dataroot_shared_disk' : '/share/gpu3/awilkins/FHC.nogaps.U.7chs_NDx', # Can be /share/gpu{0,1,2,3}
         'unaligned' : True,
         'nd_sparse' : True, # nd data is saved in sparse format using the sparse library
         'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
@@ -295,13 +295,27 @@ if __name__ == '__main__':
         # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
         # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
         # FHC.nogaps.Z.7chs_NDx
-        'A_ch0_scalefactor' : 0.00078125, # nd adc. 1/1280 for nd ADC range in nd_fd_radi_geomservice_highres8-8_V_cropped [4, 1280].
-        'A_ch3_scalefactor' : 0.020833333333333332, # # num nd packets stacked. 1/48 for nd num packets in FHC.nogaps.Z.7chs_NDx 
-        'A_ch4_scalefactor' : 0.03225806451612903, # num first pixel triggers. 1/31 for nd num first pixel triggers in FHC.nogaps.Z.7chs_NDx
-        'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.2395 for collection wire pitch of 0.479.
+        # 'A_ch0_scalefactor' : 0.00078125, # nd adc. 1/1280 for nd ADC range in FHC.nogaps.Z.7chs_NDx [4, 1280].
+        # 'A_ch3_scalefactor' : 0.020833333333333332, # # num nd packets stacked. 1/48 for nd num packets in FHC.nogaps.Z.7chs_NDx 
+        # 'A_ch4_scalefactor' : 0.03225806451612903, # num first pixel triggers. 1/31 for nd num first pixel triggers in FHC.nogaps.Z.7chs_NDx
+        # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.2395 for collection wire pitch of 0.479.
+        # 'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
+        # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+        # FHC.nogaps.U.7chs_NDx
+        'A_ch0_scalefactor' : 0.0008726003490401396, # nd adc. 1/1146 for nd ADC range in FHC.nogaps.U.7chs_NDx [4, 1146].
+        'A_ch3_scalefactor' : 0.025, # # num nd packets stacked. 1/40 for nd num packets in FHC.nogaps.U.7chs_NDx 
+        'A_ch4_scalefactor' : 0.030303030303030304, # num first pixel triggers. 1/33 for nd num first pixel triggers in FHC.nogaps.U.7chs_NDx
+        'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
         'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
-        'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
-        'name' : "FHC.nogaps.Z.7chs.NDx_6",
+        'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/2350 for induction ([-2350, 1745])     
+        # FHC.nogaps.V.7chs_NDx
+        # 'A_ch0_scalefactor' : 0.0007473841554559044, # nd adc. 1/1338 for nd ADC range in FHC.nogaps.V.7chs_NDx [4, 1338].
+        # 'A_ch3_scalefactor' : 0.025, # # num nd packets stacked. 1/40 for nd num packets in FHC.nogaps.V.7chs_NDx 
+        # 'A_ch4_scalefactor' : 0.05, # num first pixel triggers. 1/20 for nd num first pixel triggers in FHC.nogaps.V.7chs_NDx
+        # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+        # 'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
+        # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/2350 for induction ([-2350, 1745])     
+        'name' : "FHC.nogaps.U.7chs.NDx_1",
         'gpu_ids' : [0],
         'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
         'input_nc' :  7,
@@ -338,10 +352,10 @@ if __name__ == '__main__':
         'lr_policy' : 'linear', # 'linear', 'step', 'plateau', 'cosine'
         'lr_decay_iters' : 50,
         'isTrain' : True,
-        'lambda_pix' : 10000, # 1000
+        'lambda_pix' : 1000, # 1000
         'nonzero_L1weight': 10, # used for none_weighted mask type
-        'lambda_channel' : 20, # 20
-        'G_output_layer' : 'tanh+clampcollection', # 'identity', 'tanh', 'linear', 'relu', 'tanh+clampcollection', 'tanh+clampinduction'
+        'lambda_channel' : 2, # 20
+        'G_output_layer' : 'tanh+clampinduction', # 'identity', 'tanh', 'linear', 'relu', 'tanh+clampcollection', 'tanh+clampinduction'
         'direction' : 'AtoB',
         'channel_offset' : 0, # Induction 112, collection 16
         'tick_offset' : 0, # 58 NOTE both channel and tick offsets need to be nonzero for either of them to be applied
@@ -350,7 +364,7 @@ if __name__ == '__main__':
         'kernel_size' : (3,5), # 3, 4, (3,5) (for unet only)
         'outer_stride' : 2, # 2, (1,3) (for unet only)
         'inner_stride_1' : (1,3), # 2, (1,3) (for unet only)
-        'padding_type' : 'zeros' # 'reflect', 'zeros'
+        'padding_type' : 'reflect' # 'reflect', 'zeros'
     }
     # epoch : 'latest' for test
 
