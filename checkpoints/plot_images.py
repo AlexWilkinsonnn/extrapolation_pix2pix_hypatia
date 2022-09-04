@@ -128,7 +128,8 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES):
     else:
         pdf = False
 
-    induction = False if 'Z' in os.path.basename(input_dir) else True
+    induction = False if 'Z' in input_dir else True
+    # induction = True
 
     if VALID_IMAGES:
         if N == 5:
