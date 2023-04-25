@@ -68,6 +68,11 @@ class Dataset():
                         A = A[:, 112:-112, 58:-58]
                     elif A.shape[1] == 512:
                         A = A[:, 16:-16, 58:-58]
+                elif self.opt.netG == "unet_256" or self.opt.netG == "unet_128":
+                    if A.shape[1] == 480:
+                        padded_A = np.zeros((A.shape[0], 512, 4608))
+                        padded_A[:, 16:-16, 58:-58] = A
+                        A = padded_A
 
             else:
                 A = np.load(A_path)
@@ -78,6 +83,11 @@ class Dataset():
                     B = B[:, 112:-112, 58:-58]
                 elif B.shape[1] == 512:
                     B = B[:, 16:-16, 58:-58]
+            elif self.opt.netG == "unet_256" or self.opt.netG == "unet_128":
+                if B.shape[1] == 480:
+                    padded_B = np.zeros((1, 512, 4608))
+                    padded_B[:, 16:-16, 58:-58] = B
+                    B = padded_B
 
         else:
             AB_path = self.AB_paths[index]

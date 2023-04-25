@@ -7,7 +7,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 plt.rc('font', family='serif')
 
-def plot_images(realA, realB, fakeB, auto_crop, pdf, induction):
+def plot_images(realA, realB, fakeB, auto_crop, pdf, induction, jet=False):
     if len(realA.shape) == 3:
         realA = realA[0]
         realB = realB[0]
@@ -22,7 +22,7 @@ def plot_images(realA, realB, fakeB, auto_crop, pdf, induction):
         cmap = 'seismic'
         vmin, vmax = -adc_abs_max, adc_abs_max
     else: 
-        cmap = 'viridis'
+        cmap = 'viridis' if not jet else "jet"
         vmin, vmax = adc_min, adc_max
 
     realA = np.ma.masked_where(realA == 0, realA)
@@ -122,7 +122,7 @@ def plot_channel_trace(realA, realB, fakeB, auto_crop, pdf, downres):
     else:
         plt.show()
 
-def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES):
+def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES, JET):
     if PDF:
         pdf = PdfPages('out.pdf')
     else:
@@ -161,7 +161,7 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES):
                 fakeB = fakeB[:,112:-112,58:-58]
             """
 
-            plot_images(realA, realB, fakeB, AUTO_CROP, pdf, induction)
+            plot_images(realA, realB, fakeB, AUTO_CROP, pdf, induction, jet=JET)
             plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf, DOWNRES)
 
         if PDF:
@@ -184,7 +184,7 @@ def main(input_dir, VALID_IMAGES, N, AUTO_CROP, PDF, DOWNRES):
             fakeB = fakeB[:,112:-112,58:-58]
         """
 
-        plot_images(realA, realB, fakeB, AUTO_CROP, pdf, induction)
+        plot_images(realA, realB, fakeB, AUTO_CROP, pdf, induction, jet=JET)
         plot_channel_trace(realA, realB, fakeB, AUTO_CROP, pdf, DOWNRES)
 
         if PDF:
@@ -204,13 +204,16 @@ def parse_arguments():
     parser.add_argument("--auto_crop", action='store_true')
     parser.add_argument("--pdf", action='store_true')
     parser.add_argument("--downres", type=str, default='')
+    parser.add_argument("--jet", action="store_true")
 
     args = parser.parse_args()
 
     if args.auto_crop and args.downres:
         raise NotImplementedError("Not sure how to implement auto_crop for the downres translation")
 
-    return (args.input_dir, args.VALID_IMAGES, args.N, args.auto_crop, args.pdf, args.downres)
+    return (
+        args.input_dir, args.VALID_IMAGES, args.N, args.auto_crop, args.pdf, args.downres, args.jet
+    )
 
 if __name__ == '__main__':
     arguments = parse_arguments()
