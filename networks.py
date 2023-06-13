@@ -157,14 +157,17 @@ def define_G(
         ngf (int) -- the number of filters in the last conv layer
         netG (str) -- the architecture's name:
             resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} |
-            resnet_9blocks_downres(8,8)_{1,2,3} | resnet_6blocks | unet_256 | unet_128
+            resnet_9blocks_downres(8,8)_{1,2,3} | resnet_6blocks |
+            unet_256 | unet_128 | unet_256_k3 | unet_256_k3-5 | unet_256_k3-5_strides1 |
+            unet_256_k3-5_strides2 | unet_256_k3_strides1
         norm (str) -- the name of normalization layers used in the network: batch | instance | none
         use_dropout (bool) -- if use dropout layers.
         init_type (str) -- the name of our initialization method.
         init_gain (float) -- scaling factor for normal, xavier and orthogonal.
         gpu_id (int) -- which GPU the network runs on: e.g., 0,1,2
         output_layer (str) -- output layer of G
-        padding_type (str) -- type of padding to be used in convolutions (only implemented for resnet)
+        padding_type (str) -- type of padding to be used in convolutions
+            (only implemented for resnet)
 
     Returns a generator
 
@@ -193,7 +196,11 @@ def define_G(
             n_blocks=9,
             output_layer=output_layer,
             padding_type=padding_type,
-            downres='none'
+            n_downsampling=2,
+            downsampling_strides=[2, 2],
+            upsampling_strides=[2, 2],
+            downupsampling_more_features=[True, True],
+            upsampling_output_padding=[1, 1]
         )
 
     elif netG == 'resnet_6blocks':
@@ -204,7 +211,11 @@ def define_G(
             n_blocks=6,
             output_layer=output_layer,
             padding_type=padding_type,
-            downres='none'
+            n_downsampling=2,
+            downsampling_strides=[2, 2],
+            upsampling_strides=[2, 2],
+            downupsampling_more_features=[True, True],
+            upsampling_output_padding=[1, 1]
         )
 
     elif netG == 'resnet_9blocks_downres(4,10)_1':
@@ -215,7 +226,11 @@ def define_G(
             n_blocks=9,
             output_layer=output_layer,
             padding_type=padding_type,
-            downres='(4,10)_1'
+            n_downsampling=2,
+            downsampling_strides=[2, (2,5)],
+            upsampling_strides=[1, 1],
+            downupsampling_more_features=[True, True],
+            upsampling_output_padding=[0, 0]
         )
 
     elif netG == 'resnet_9blocks_downres(4,10)_2':
@@ -226,7 +241,11 @@ def define_G(
             n_blocks=9,
             output_layer=output_layer,
             padding_type=padding_type,
-            downres='(4,10)_2'
+            n_downsampling=3,
+            downsampling_strides=[2, 1, (2,5)],
+            upsampling_strides=[1, 1, 1],
+            downupsampling_more_features=[True, True, True],
+            upsampling_output_padding=[0, 0, 0]
         )
 
     elif netG == 'resnet_9blocks_downres(8,8)_1':
@@ -237,7 +256,11 @@ def define_G(
             n_blocks=9,
             output_layer=output_layer,
             padding_type=padding_type,
-            downres='(8,8)_1'
+            n_downsampling=3,
+            downsampling_strides=[2, 2, 2],
+            upsampling_strides=[1, 1, 1],
+            downupsampling_more_features=[True, True, True],
+            upsampling_output_padding=[0, 0, 0]
         )
 
     elif netG == 'resnet_9blocks_downres(8,8)_2':
@@ -248,7 +271,11 @@ def define_G(
             n_blocks=9,
             output_layer=output_layer,
             padding_type=padding_type,
-            downres='(8,8)_2'
+            n_downsampling=5,
+            downsampling_strides=[2, 2, 2, 2, 2], # out to in
+            upsampling_strides=[1, 1 ,1 ,2 ,2], # out to in
+            downupsampling_more_features=[True, True, True, True, True], # out to in
+            upsampling_output_padding=[0, 0, 0, 1, 1] # out to in
         )
 
     elif netG == 'resnet_9blocks_downres(8,8)_3':
@@ -259,7 +286,11 @@ def define_G(
             n_blocks=9,
             output_layer=output_layer,
             padding_type=padding_type,
-            downres='(8,8)_3'
+            n_downsampling=5,
+            downsampling_strides=[2, 2, 2, 2, 2],
+            upsampling_strides=[2, 2, 1, 1, 1],
+            downupsampling_more_features=[True, False, True, False, True],
+            upsampling_output_padding=[1, 1, 1, 1, 1]
         )
 
     elif netG == 'unet_128':
@@ -272,6 +303,89 @@ def define_G(
         net = UnetGenerator(
             input_nc, output_nc, 8, ngf,
             norm_layer=norm_layer, use_dropout=use_dropout, output_layer=output_layer
+        )
+
+    # if kernel_size == 3 and outer_stride == 2 and inner_stride_1 == 2:
+    #     paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
+    #     output_paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
+    elif netG == "unet_256_k3":
+        output_paddings = { 0 : 1, 1 : 1, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        net = UnetGenerator(
+            input_nc, output_nc, 8, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            output_layer=output_layer,
+            kernel_size=3,
+            output_paddings=output_paddings
+        )
+
+    # elif kernel_size == (3,5) and outer_stride == 2 and inner_stride_1 == 2:
+    #     paddings = { 'inner' : (1,2), 'outer' : (1,2), 'in1' : (1,2) }
+    #     output_paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
+    elif netG == "unet_256_k3-5":
+        paddings = { 0 : (1,2), 1 : (1,2), 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : (1,2) }
+        output_paddings = { 0 : 1, 1 : 1, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        net = UnetGenerator(
+            input_nc, output_nc, 8, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            output_layer=output_layer,
+            kernel_size=(3,5),
+            output_paddings=output_paddings,
+            paddings=paddings
+        )
+
+    # elif kernel_size == (3,5) and outer_stride == (1,3) and inner_stride_1 == 2:
+    #     paddings = { 'inner' : (1,2), 'outer' : 1, 'in1' : (1,2) }
+    #     output_paddings = { 'inner' : 1, 'outer' : 0, 'in1' : 1 }
+    elif netG == "unet_256_k3-5_strides1":
+        paddings = { 0 : 1, 1 : (1,2), 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : (1,2) }
+        output_paddings = { 0 : 0, 1 : 1, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        strides = { 0 : (1,3), 1 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
+        net = UnetGenerator(
+            input_nc, output_nc, 8, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            output_layer=output_layer,
+            kernel_size=(3,5),
+            output_paddings=output_paddings,
+            paddings=paddings,
+            strides=strides
+        )
+
+    # elif kernel_size == (3,5) and outer_stride == 2 and inner_stride_1 == (1,3):
+    #     paddings = { 'inner' : (1,2), 'outer' : (1,2), 'in1' : 1 }
+    #     output_paddings = { 'inner' : 1, 'outer' : (1,1), 'in1' : 0 }
+    elif netG == "unet_256_k3-5_strides2":
+        paddings = { 0 : (1,2), 1 : 1, 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : (1,2) }
+        output_paddings = { 0 : 1, 1 : 0, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        strides = { 0 : 2, 1 : (1,3), 2 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
+        net = UnetGenerator(
+            input_nc, output_nc, 8, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            output_layer=output_layer,
+            kernel_size=(3,5),
+            output_paddings=output_paddings,
+            paddings=paddings,
+            strides=strides
+        )
+
+    # elif kernel_size == 3 and outer_stride == (1,3) and inner_stride_1 == (1,3):
+    #     paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
+    #     output_paddings = { 'inner' : 1, 'outer' : (0,2), 'in1' : (0,2) }
+    elif netG == "unet_256_k3_strides1":
+        output_paddings = { 0 : (0,2), 1 : (0,2), 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        strides = { 0 : (1,3), 1 : (1,3), 2 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
+        net = UnetGenerator(
+            input_nc, output_nc, 8, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            output_layer=output_layer,
+            kernel_size=3,
+            output_paddings=output_paddings,
+            paddings=paddings,
+            strides=strides
         )
 
     else:
@@ -289,9 +403,10 @@ def define_D(
         input_nc (int) -- the number of channels in input images
         ndf (int) -- the number of filters in the first conv layer
         netD (str) -- the architecture's name: basic | n_layers | pixel
-        n_layers_D (int) -- the number of conv layers in the discriminator; effective when netD=='n_layers'
-        norm (str)      -- the type of normalization layers used in the network.
-        init_type (str)   -- the name of the initialization method.
+        n_layers_D (int) -- the number of conv layers in the discriminator;
+            effective when netD=='n_layers'
+        norm (str) -- the type of normalization layers used in the network.
+        init_type (str) -- the name of the initialization method.
         init_gain (float) -- scaling factor for normal, xavier and orthogonal.
         gpu_id (int) -- which GPU the network runs on: e.g., 0,1,2
 
@@ -315,97 +430,19 @@ def define_D(
     net = None
     norm_layer = get_norm_layer(norm_type=norm)
 
-    if netD == 'basic':  # default PatchGAN classifier
+    if netD == 'basic': # default PatchGAN classifier
         net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer)
 
-    elif netD == 'n_layers':  # more options
+    elif netD == 'n_layers': # more options
         net = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer)
 
-    elif netD == 'pixel':     # classify if each pixel is real or fake
+    elif netD == 'pixel': # classify if each pixel is real or fake
         net = PixelDiscriminator(input_nc, ndf, norm_layer=norm_layer)
 
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' % netD)
 
     return init_net(net, init_type, init_gain, gpu_id)
-
-
-class GANLoss(nn.Module):
-    """Define different GAN objectives.
-
-    The GANLoss class abstracts away the need to create the target label tensor
-    that has the same size as the input.
-    """
-    def __init__(self, gan_mode, target_real_label=1.0, target_fake_label=0.0):
-        """ Initialize the GANLoss class.
-
-        Parameters:
-            gan_mode (str) -- the type of GAN objective.
-                It currently supports vanilla, lsgan, and wgangp.
-            target_real_label (bool) -- label for a real image
-            target_fake_label (bool) -- label of a fake image
-
-        Note: Do not use sigmoid as the last layer of Discriminator.
-        LSGAN needs no sigmoid. vanilla GANs will handle it with BCEWithLogitsLoss.
-        """
-        super(GANLoss, self).__init__()
-
-        self.register_buffer('real_label', torch.tensor(target_real_label))
-        self.register_buffer('fake_label', torch.tensor(target_fake_label))
-        self.gan_mode = gan_mode
-        if gan_mode == 'lsgan':
-            self.loss = nn.MSELoss()
-
-        elif gan_mode == 'vanilla':
-            self.loss = nn.BCEWithLogitsLoss()
-
-        elif gan_mode in ['wgangp']:
-            self.loss = None
-
-        else:
-            raise NotImplementedError('gan mode %s not implemented' % gan_mode)
-
-    def get_target_tensor(self, prediction, target_is_real):
-        """Create label tensors with the same size as the input.
-
-        Parameters:
-            prediction (tensor) - - tpyically the prediction from a discriminator
-            target_is_real (bool) - - if the ground truth label is for real images or fake images
-
-        Returns:
-            A label tensor filled with ground truth label, and with the size of the input
-        """
-
-        if target_is_real:
-            target_tensor = self.real_label
-
-        else:
-            target_tensor = self.fake_label
-
-        return target_tensor.expand_as(prediction)
-
-    def __call__(self, prediction, target_is_real):
-        """Calculate loss given Discriminator's output and ground truth labels.
-
-        Parameters:
-            prediction (tensor) - - tpyically the prediction output from a discriminator
-            target_is_real (bool) - - if the ground truth label is for real images or fake images
-
-        Returns:
-            the calculated loss.
-        """
-        if self.gan_mode in ['lsgan', 'vanilla']:
-            target_tensor = self.get_target_tensor(prediction, target_is_real)
-            loss = self.loss(prediction, target_tensor)
-
-        elif self.gan_mode == 'wgangp':
-            if target_is_real:
-                loss = -prediction.mean()
-
-            else:
-                loss = prediction.mean()
-
-        return loss
 
 
 class UnetGenerator(nn.Module):
@@ -443,14 +480,11 @@ class UnetGenerator(nn.Module):
         super(UnetGenerator, self).__init__()
 
         if not paddings:
-            for i_layer in range(num_downs):
-                paddings[i_layer] = 1
+            paddings = { i_layer : 1 for i_layer in range(num_downs) }
         if not output_paddings: # for the upsampling transpose conv only
-            for i_layer in range(num_downs):
-                output_paddings[i_layer] = 0
+            output_paddings = { i_layer : 0 for i_layer in range(num_downs) }
         if not strides:
-            for i_layer in range(num_downs):
-                strides[i_layer] = 2
+            strides = { i_layer : 2 for i_layer in range(num_downs) }
 
         assert(num_downs == len(paddings))
         assert(num_downs == len(output_paddings))
@@ -520,7 +554,7 @@ class UnetGenerator(nn.Module):
         )
         i_layer = next(itr_layer)
         unet_block = UnetSkipConnectionBlock(
-            ngf * 2, ngf * 8,
+            ngf * 2, ngf * 4,
             input_nc=None,
             submodule=unet_block,
             norm_layer=norm_layer,
@@ -532,7 +566,7 @@ class UnetGenerator(nn.Module):
         )
         i_layer = next(itr_layer)
         unet_block = UnetSkipConnectionBlock(
-            ngf, ngf * 8,
+            ngf, ngf * 2,
             input_nc=None,
             submodule=unet_block,
             norm_layer=norm_layer,
@@ -544,7 +578,7 @@ class UnetGenerator(nn.Module):
         )
         i_layer = next(itr_layer)
         self.model = unet_block = UnetSkipConnectionBlock(
-            output_nc, ngf * 8,
+            output_nc, ngf,
             input_nc=input_nc,
             submodule=unet_block,
             norm_layer=norm_layer,
@@ -606,7 +640,6 @@ class UnetSkipConnectionBlock(nn.Module):
         X -------------------identity----------------------
         |-- downsampling -- |submodule| -- upsampling --|
     """
-
     def __init__(
         self, outer_nc, inner_nc,
         input_nc=None,
@@ -744,7 +777,8 @@ class ResnetGenerator(nn.Module):
             padding_type='reflect',
             output_layer='tanh',
             n_downsampling=2,
-            downupsampling_strides=[2,2],
+            downsampling_strides=[2,2],
+            upsampling_strides=[2,2],
             downupsampling_more_features=[True,True],
             upsampling_output_padding=[1,1]
         ):
@@ -761,8 +795,10 @@ class ResnetGenerator(nn.Module):
             output_layer (str) -- output layer to use:
                 tanh | tanh+clampinduction | tanh+clampcollection | identity | relu
             n_downsampling (int) -- number of downsampling/upsampling layers before resnet blocks
-            downupsampling_strides (list of int or list of tuple of int) -- strides to use for each
-                level of down/upsampling
+            downsampling_strides (list of int or list of tuple of int) -- strides to use for each
+                level of downsampling
+            upsampling_strides (list of int or list of tuple of int) -- strides to use for each
+                level of upsampling
             downupsampling_more_features (list of bool) -- whether to double the number of features
                 at each level of downsampling
             upsampling_output_padding (list of int or list of tuple of int) -- output padding for
@@ -962,7 +998,7 @@ class ResnetGenerator(nn.Module):
             model += [
                 nn.Conv2d(
                     in_features, out_features,
-                    kernel_size=3, stride=downupsampling_strides[i], padding=1, bias=use_bias
+                    kernel_size=3, stride=downsampling_strides[i], padding=1, bias=use_bias
                 ),
                 norm_layer(out_features),
                 nn.ReLU(True)
@@ -993,8 +1029,9 @@ class ResnetGenerator(nn.Module):
                 nn.ConvTranspose2d(
                     in_features, out_features,
                     kernel_size=3,
-                    stride=downupsampling_strides[i],
-                    padding=upsampling_output_padding[i],
+                    stride=upsampling_strides[i],
+                    output_padding=upsampling_output_padding[i],
+                    padding=1,
                     bias=use_bias
                 ),
                 norm_layer(out_features),
@@ -1031,7 +1068,6 @@ class ResnetGenerator(nn.Module):
 
 class ResnetBlock(nn.Module):
     """Define a Resnet block"""
-
     def __init__(self, dim, padding_type, norm_layer, use_dropout, use_bias):
         """Initialize the Resnet block
         A resnet block is a conv block with skip connections
@@ -1097,33 +1133,36 @@ class ResnetBlock(nn.Module):
 
 class NLayerDiscriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
-
     def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d):
         """Construct a PatchGAN discriminator
 
         Parameters:
-            input_nc (int)  -- the number of channels in input images
-            ndf (int)       -- the number of filters in the last conv layer
-            n_layers (int)  -- the number of conv layers in the discriminator
-            norm_layer      -- normalization layer
+            input_nc (int) -- the number of channels in input images
+            ndf (int) -- the number of filters in the last conv layer
+            n_layers (int) -- the number of conv layers in the discriminator
+            norm_layer -- normalization layer
         """
         super(NLayerDiscriminator, self).__init__()
-        if type(norm_layer) == functools.partial:  # no need to use bias as BatchNorm2d has affine parameters
+        # no need to use bias as BatchNorm2d has affine parameters
+        if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
-
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
 
-        kw = 4
-        padw = 1
-        sequence = [nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw), nn.LeakyReLU(0.2, True)]
-        nf_mult = 1
-        nf_mult_prev = 1
-        for n in range(1, n_layers):  # gradually increase the number of filters
+        kw, padw = 4, 1
+        sequence = [
+            nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
+            nn.LeakyReLU(0.2, True)
+        ]
+        nf_mult, nf_mult_prev = 1, 1
+        for n in range(1, n_layers): # gradually increase the number of filters
             nf_mult_prev = nf_mult
-            nf_mult = min(2 ** n, 8)
+            nf_mult = min(2**n, 8)
             sequence += [
-                nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=2, padding=padw, bias=use_bias),
+                nn.Conv2d(
+                    ndf * nf_mult_prev, ndf * nf_mult,
+                    kernel_size=kw, stride=2, padding=padw, bias=use_bias
+                ),
                 norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
@@ -1131,12 +1170,16 @@ class NLayerDiscriminator(nn.Module):
         nf_mult_prev = nf_mult
         nf_mult = min(2 ** n_layers, 8)
         sequence += [
-            nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult, kernel_size=kw, stride=1, padding=padw, bias=use_bias),
+            nn.Conv2d(
+                ndf * nf_mult_prev, ndf * nf_mult,
+                kernel_size=kw, stride=1, padding=padw, bias=use_bias
+            ),
             norm_layer(ndf * nf_mult),
             nn.LeakyReLU(0.2, True)
         ]
 
-        sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
+        # output 1 channel prediction map
+        sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
         self.model = nn.Sequential(*sequence)
 
     def forward(self, input):
@@ -1145,19 +1188,18 @@ class NLayerDiscriminator(nn.Module):
 
 class PixelDiscriminator(nn.Module):
     """Defines a 1x1 PatchGAN discriminator (pixelGAN)"""
-
     def __init__(self, input_nc, ndf=64, norm_layer=nn.BatchNorm2d):
         """Construct a 1x1 PatchGAN discriminator
 
         Parameters:
-            input_nc (int)  -- the number of channels in input images
-            ndf (int)       -- the number of filters in the last conv layer
-            norm_layer      -- normalization layer
+            input_nc (int) -- the number of channels in input images
+            ndf (int) -- the number of filters in the last conv layer
+            norm_layer -- normalization layer
         """
         super(PixelDiscriminator, self).__init__()
-        if type(norm_layer) == functools.partial:  # no need to use bias as BatchNorm2d has affine parameters
+        # no need to use bias as BatchNorm2d has affine parameters
+        if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
-
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
 
@@ -1167,9 +1209,11 @@ class PixelDiscriminator(nn.Module):
             nn.Conv2d(ndf, ndf * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
             norm_layer(ndf * 2),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(ndf * 2, 1, kernel_size=1, stride=1, padding=0, bias=use_bias)]
+            nn.Conv2d(ndf * 2, 1, kernel_size=1, stride=1, padding=0, bias=use_bias)
+        ]
 
         self.net = nn.Sequential(*self.net)
 
     def forward(self, input):
         return self.net(input)
+
