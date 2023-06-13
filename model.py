@@ -198,7 +198,7 @@ class Pix2pix():
                 save_path = os.path.join(self.save_dir, save_filename)
                 net = getattr(self, 'net' + name)
 
-                torch.save(net.module.cpu().state_dict(), save_path)
+                torch.save(net.cpu().state_dict(), save_path)
                 net.cuda(self.gpu_id)
 
     def __patch_instance_norm_state_dict(self, state_dict, module, keys, i=0):
