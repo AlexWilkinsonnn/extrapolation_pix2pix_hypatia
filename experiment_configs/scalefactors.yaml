@@ -1,0 +1,76 @@
+# A
+# ch0 ND adc - 1 / max(abs(ND adc))
+# ch1 sqrt(ND drift) -
+
+
+
+    'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
+    'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])
+    # These factors are always the same
+  'A_ch1_scalefactor' : 0.14085904245475275, # nd drift distance. 1/sqrt(50.4) for max nd drift in a module.
+  'A_ch2_scalefactor' : 0.05645979274839422, # fd drift distance. 1/sqrt(313.705) for max fd drift accounting for putting the vtx and 2000 and associated cuts.
+  # Comment based on data set in use
+  # nd_fd_radi_1-8_vtxaligned_noped_morechannels
+  # 'A_ch0_scalefactor' : 0.0011947431302270011, # nd adc. 1/837 for nd ADC range in nd_fd_radi_1-8_vtxaligned_noped_morechannels [4, 837].
+  # 'A_ch3_scalefactor' : 0.025, # num nd packets stacked. 1/40 for nd num packets in nd_fd_radi_1-8_vtxaligned_noped_morechannels [1, 40]
+  # 'A_ch4_scalefactor' : 1.0, # if two pixel cols map to the wire
+  # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+  # nd_fd_radi_geomservice_Z && nd_fd_geomservice_Z_wiredistance
+  # 'A_ch0_scalefactor' : 0.0011695906432746538, # nd adc. 1/855 for nd ADC range in nd_fd_radi_geomservice_Z [4, 855].
+  # 'A_ch3_scalefactor' : 0.023809523809523808, # num nd packets stacked. 1/42 for nd num packets in nd_fd_radi_geomservice_Z [1, 42]
+  # 'A_ch4_scalefactor' : 0.023809523809523808, # num first pixel triggers. 1/42 for nd num first pixel triggers in nd_fd_radi_geomservice_Z [1, 42]
+  # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.2395 for collection wire pitch of 0.479.
+  # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+  # nd_fd_radi_geomservice_U && nd_fd_geomservice_U_wiredistance
+  # 'A_ch0_scalefactor' : 0.0012484394506866417, # nd adc. 1/801 for nd ADC range in nd_fd_radi_geomservice_U [4, 801].
+  # 'A_ch3_scalefactor' : 0.022222222222222223, # num nd packets stacked. 1/45 for nd num packets in nd_fd_radi_geomservice_U [1, 45]
+  # 'A_ch4_scalefactor' : 0.022222222222222223, # num first pixel triggers. 1/45 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 45]
+  # 'A_ch5_scalefactor' : 4.285408185129634, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+  # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+  # nd_fd_geomservice_V && nd_fd_geomservice_V_wiredistance
+  # 'A_ch0_scalefactor' : 0.0012484394506866417, # nd adc. 1/562 for nd ADC range in nd_fd_radi_geomservice_V [4, 562].
+  # 'A_ch3_scalefactor' : 0.03225806451612903, # num nd packets stacked. 1/31 for nd num packets in nd_fd_radi_geomservice_V [1, 31]
+  # 'A_ch4_scalefactor' : 0.03225806451612903, # num first pixel triggers. 1/31 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 31]
+  # 'A_ch5_scalefactor' : 4.285408185129634, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+  # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+  # nd_fd_geomserivce_highres_Z_cropped
+  # 'A_ch0_scalefactor' : 0.0029585798816568047, # nd adc. 1/338 for nd ADC range in nd_fd_radi_geomservice_highres_Z_cropped [4, 338].
+  # 'A_ch3_scalefactor' : 0.1, # num nd packets stacked. 1/10 for nd num packets in nd_fd_radi_geomservice_highres_Z_cropped [1, 10]
+  # 'A_ch4_scalefactor' : 0.1, # num first pixel triggers. 1/10 for nd num first pixel triggers in nd_fd_radi_geomservice_highres_Z_cropped [1, 10]
+  # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+  # nd_fd_geomservice_highres8-8_Z_cropped
+  # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/338 for nd ADC range in nd_fd_radi_geomservice_highres8-8_Z_cropped [4, 338].
+  # 'A_ch3_scalefactor' : 0.08333333333333333, # num nd packets stacked. 1/12 for nd num packets in nd_fd_radi_geomservice_highres8-8_Z_cropped [1, 12]
+  # 'A_ch4_scalefactor' : 0.08333333333333333, # num first pixel triggers. 1/12 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_Z_cropped [1, 12]
+  # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+  # nd_fd_geomservice_highres8-8_U_cropped
+  # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/185 for nd ADC range in nd_fd_radi_geomservice_highres8-8_U_cropped [4, 185].
+  # 'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_U_cropped [1, 4]
+  # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_U_cropped [1, 4]
+  # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+  # nd_fd_geomservice_highres8-8_V_cropped
+  # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/185 for nd ADC range in nd_fd_radi_geomservice_highres8-8_V_cropped [4, 185].
+  # 'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
+  # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
+  # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+  # FHC.nogaps.Z.7chs_NDx
+  'A_ch0_scalefactor' : 0.00078125, # nd adc. 1/1280 for nd ADC range in FHC.nogaps.Z.7chs_NDx [4, 1280].
+  'A_ch3_scalefactor' : 0.020833333333333332, # # num nd packets stacked. 1/48 for nd num packets in FHC.nogaps.Z.7chs_NDx
+  'A_ch4_scalefactor' : 0.03225806451612903, # num first pixel triggers. 1/31 for nd num first pixel triggers in FHC.nogaps.Z.7chs_NDx
+  'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.2395 for collection wire pitch of 0.479.
+  'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
+  'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+  # FHC.nogaps.U.7chs_NDx
+  # 'A_ch0_scalefactor' : 0.0008726003490401396, # nd adc. 1/1146 for nd ADC range in FHC.nogaps.U.7chs_NDx [4, 1146].
+  # 'A_ch3_scalefactor' : 0.025, # # num nd packets stacked. 1/40 for nd num packets in FHC.nogaps.U.7chs_NDx
+  # 'A_ch4_scalefactor' : 0.030303030303030304, # num first pixel triggers. 1/33 for nd num first pixel triggers in FHC.nogaps.U.7chs_NDx
+  # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+  # 'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
+  # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/2350 for induction ([-2350, 1745])
+  # FHC.nogaps.V.7chs_NDx
+  # 'A_ch0_scalefactor' : 0.0007473841554559044, # nd adc. 1/1338 for nd ADC range in FHC.nogaps.V.7chs_NDx [4, 1338].
+  # 'A_ch3_scalefactor' : 0.025, # # num nd packets stacked. 1/40 for nd num packets in FHC.nogaps.V.7chs_NDx
+  # 'A_ch4_scalefactor' : 0.05, # num first pixel triggers. 1/20 for nd num first pixel triggers in FHC.nogaps.V.7chs_NDx
+  # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+  # 'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
+  # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/2350 for induction ([-2350, 1745])

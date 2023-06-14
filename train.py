@@ -55,6 +55,9 @@ def main(opt):
                 with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
                     f.write(loss_line + '\n')
 
+                if total_iters % opt.print_freq == 0:
+                    print(loss_line)
+
                 if total_iters % opt.display_freq == 0:
                     visuals = model.get_current_visuals()
 
@@ -298,8 +301,6 @@ if __name__ == '__main__':
 
     if not os.path.exists(os.path.join(options['checkpoints_dir'], options['name'])):
         os.makedirs(os.path.join(options['checkpoints_dir'], options['name']))
-
-        shutil.copyfile(src, dst)
 
     shutil.copyfile(
         args.config, os.path.join(options['checkpoints_dir'], options['name'], "config.yaml")

@@ -1,0 +1,251 @@
+name: "test"
+
+# --- Misc ---
+gpu_id: 0
+checkpoints_dir: '/home/awilkins/extrapolation_pix2pix/checkpoints'
+
+# --- Data loading and prep ---
+dataroot: "/state/partition1/awilkins/..."
+dataroot_shared_disk: "/share/gpu...awilkins/..."
+# True: trainA, trainB, validA, validB | False: train, valid
+unaligned: True
+# If nd data is saved with the sparse library so needs to be read in differently
+nd_sparse: True
+# Zero padding or cropping to apply to data. Note height is channel and width is tick.
+# Unet requires padding to be a multiple of 128 or 256 (for 256: w=56 h=16).
+# For resnet, if data was saved with zero padding, can trim it with the crop.
+pad_w: 0
+pad_h: 0
+crop_w: 0
+crop_h: 0
+# saved (last channel of A contains the mask) | saved_fd (last channel of B contains the mask) |
+# auto (make the mask on the fly in the loss function by smearing B) |
+# none (no mask stored) | dont_use (mask stored in last channel of A and don't use in loss) |
+# none_weighted (no mask stored but use weight non-zero adc in B higher by nonzero_L1weight) |
+# saved_1rms (last channel of A contains the mask, only register non-zero loss when difference is
+# greater than 1 rms set by rms option)
+mask_type: "saved"
+# Scale each channel in preprocessing. See scalefactors.yaml for list of scalefactors for datasets.
+A_ch_scalefactors:
+  - 0.00078125
+  - 0.14085904245475275
+  - 0.05645979274839422
+  - 0.020833333333333332
+  - 0.03225806451612903
+  - 4.175365344467641
+  - 0.02063983488132095
+B_ch_scalefactors:
+  - 0.00031298904538341156
+input_nc: 7
+output_nc: 1
+direction: 'AtoB'
+# If any of the image is zeros we can set channel_offset and tick_offset to ignore the zeros in
+#the loss and the discriminator
+channel_offset: 0
+tick_offset: 0
+# Add a channel to A of Gaussian noise each time it is loaded
+noise_layer: False
+# -1 (pass the whole image) |
+# >= 0 (split image into random tick ranges 512 long, current implementation is broken)
+samples: -1
+
+# --- Model and training ---
+# Number of filters at bottlenecks (where there are the most)
+ngf: 64
+ndf: 64
+# n_layers | basic | pixel
+netD: 'n_layers'
+# Remove the adversarial component entirely
+no_D_test: False
+# resnet_9blocks | resnet_6blocks | resnet_9blocks_downres(4,10)_1 |
+# resnet_9blocks_downres(4,10)_2 | resnet_9blocks_downres(8,8)_1 | resnet_9blocks_downres(8,8)_2 |
+# resnet_9blocks_downres(8,8)_3 | unet_128 | unet_256 | unet_256_k3 | unet_256_k3-5 |
+# unet_256_k3-5_strides1 | unet_256_k3-5_strides2 | unet_256_strides1
+# downres modes produce an output smaller than input
+# (for experimenting with high resolution wire projections)
+netG: "unet_256"
+# default was 5
+n_layers_D: 4
+# batch | instance | none
+norm: 'batch'
+# normal | xavier | kaiming | orthogonal
+# Most success with xavier and orthogonal
+init_type: 'xavier'
+init_gain: 0.02
+no_dropout: False
+n_epochs: 12
+n_epochs_decay: 5
+beta1: 0.5
+# default was 0
+adam_weight_decay: 0.0001
+# Typically [0.00001, 0.0002]
+lr: 0.0001
+# vanilla | lsgan | wgangp
+gan_mode: 'vanilla'
+# linear | step | plateau | cosine
+lr_policy : 'linear'
+lr_decay_iters : 50
+isTrain: True
+lambda_pix: 1000
+# See mask_type=none_weighted
+nonzero_L1weight: 10
+lambda_channel: 20
+# identity | tanh | linear | relu | tanh+clampcollection | tanh+clampinduction
+# The clamp output layers are scaled for induction and collection assuming normalisation to [-1, 1]
+# that retains the positions of zero ie. divided by max(abs(min(adcs)), abs(max(adcs)))
+G_output_layer: 'tanh+clampcollection'
+# D takes the output image without the input concatenated (useful for interacting with CycleGAN)
+unconditional_D: False
+# reflect | zeros
+padding_type: 'reflect'
+# Only for mask_type=saved_1rms
+rms : 3.610753167639414
+
+# --- Training misc ---
+serial_batches: False
+num_threads: 4
+batch_size : 1
+max_dataset_size: 18000
+
+# Logging
+display_freq : 2000
+print_freq: 100
+# "epoch" for at the end of each epoch
+valid_freq: 9000
+num_valid: 1000
+save_latest_freq: 10000
+save_epoch_freq: 4
+
+
+
+
+options = {
+    'dataroot' : '/state/partition1/awilkins/FHC.nogaps.Z.7chs_NDx',
+    'dataroot_shared_disk' : '/share/gpu1/awilkins/FHC.nogaps.Z.7chs_NDx', # Can be /share/gpu{0,1,2,3}
+    'unaligned' : True,
+    'nd_sparse' : True, # nd data is saved in sparse format using the sparse library
+    'full_image' : False, # True if you want to crop a full image into 512 tiles, false otherwise
+    'samples' : 1, # 0 to do samples = ticks//512
+    'mask_type' : 'saved', # 'auto', 'saved', 'none'. 'none_weighted', 'saved_1rms', 'dont_use', 'saved_fd'
+    'rms' : 3.610753167639414, # needed is mask_type='saved_1rms'. collection_fsb_nu: 3.610753167639414, U_fsb_fixedbb_nu: 3.8106195813271166, V_fsb_fixedbb_nu: 3.8106180475002605
+    # 'A_ch0_scalefactor' : 0.00031298904538341156, # Scale down the ND adc by max of the dataset for now
+    # 'B_ch0_scalefactor' : 0.00031298904538341156, # 1/3195 for collection ([-900, 3195]), used to be incorrect (0.0002781641168289291, [-500, 3595])
+    # These factors are always the same
+    'A_ch1_scalefactor' : 0.14085904245475275, # nd drift distance. 1/sqrt(50.4) for max nd drift in a module.
+    'A_ch2_scalefactor' : 0.05645979274839422, # fd drift distance. 1/sqrt(313.705) for max fd drift accounting for putting the vtx and 2000 and associated cuts.
+    # Comment based on data set in use
+    # nd_fd_radi_1-8_vtxaligned_noped_morechannels
+    # 'A_ch0_scalefactor' : 0.0011947431302270011, # nd adc. 1/837 for nd ADC range in nd_fd_radi_1-8_vtxaligned_noped_morechannels [4, 837].
+    # 'A_ch3_scalefactor' : 0.025, # num nd packets stacked. 1/40 for nd num packets in nd_fd_radi_1-8_vtxaligned_noped_morechannels [1, 40]
+    # 'A_ch4_scalefactor' : 1.0, # if two pixel cols map to the wire
+    # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+    # nd_fd_radi_geomservice_Z && nd_fd_geomservice_Z_wiredistance
+    # 'A_ch0_scalefactor' : 0.0011695906432746538, # nd adc. 1/855 for nd ADC range in nd_fd_radi_geomservice_Z [4, 855].
+    # 'A_ch3_scalefactor' : 0.023809523809523808, # num nd packets stacked. 1/42 for nd num packets in nd_fd_radi_geomservice_Z [1, 42]
+    # 'A_ch4_scalefactor' : 0.023809523809523808, # num first pixel triggers. 1/42 for nd num first pixel triggers in nd_fd_radi_geomservice_Z [1, 42]
+    # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.2395 for collection wire pitch of 0.479.
+    # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+    # nd_fd_radi_geomservice_U && nd_fd_geomservice_U_wiredistance
+    # 'A_ch0_scalefactor' : 0.0012484394506866417, # nd adc. 1/801 for nd ADC range in nd_fd_radi_geomservice_U [4, 801].
+    # 'A_ch3_scalefactor' : 0.022222222222222223, # num nd packets stacked. 1/45 for nd num packets in nd_fd_radi_geomservice_U [1, 45]
+    # 'A_ch4_scalefactor' : 0.022222222222222223, # num first pixel triggers. 1/45 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 45]
+    # 'A_ch5_scalefactor' : 4.285408185129634, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+    # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+    # nd_fd_geomservice_V && nd_fd_geomservice_V_wiredistance
+    # 'A_ch0_scalefactor' : 0.0012484394506866417, # nd adc. 1/562 for nd ADC range in nd_fd_radi_geomservice_V [4, 562].
+    # 'A_ch3_scalefactor' : 0.03225806451612903, # num nd packets stacked. 1/31 for nd num packets in nd_fd_radi_geomservice_V [1, 31]
+    # 'A_ch4_scalefactor' : 0.03225806451612903, # num first pixel triggers. 1/31 for nd num first pixel triggers in nd_fd_radi_geomservice_U [1, 31]
+    # 'A_ch5_scalefactor' : 4.285408185129634, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+    # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+    # nd_fd_geomserivce_highres_Z_cropped
+    # 'A_ch0_scalefactor' : 0.0029585798816568047, # nd adc. 1/338 for nd ADC range in nd_fd_radi_geomservice_highres_Z_cropped [4, 338].
+    # 'A_ch3_scalefactor' : 0.1, # num nd packets stacked. 1/10 for nd num packets in nd_fd_radi_geomservice_highres_Z_cropped [1, 10]
+    # 'A_ch4_scalefactor' : 0.1, # num first pixel triggers. 1/10 for nd num first pixel triggers in nd_fd_radi_geomservice_highres_Z_cropped [1, 10]
+    # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+    # nd_fd_geomservice_highres8-8_Z_cropped
+    # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/338 for nd ADC range in nd_fd_radi_geomservice_highres8-8_Z_cropped [4, 338].
+    # 'A_ch3_scalefactor' : 0.08333333333333333, # num nd packets stacked. 1/12 for nd num packets in nd_fd_radi_geomservice_highres8-8_Z_cropped [1, 12]
+    # 'A_ch4_scalefactor' : 0.08333333333333333, # num first pixel triggers. 1/12 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_Z_cropped [1, 12]
+    # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+    # nd_fd_geomservice_highres8-8_U_cropped
+    # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/185 for nd ADC range in nd_fd_radi_geomservice_highres8-8_U_cropped [4, 185].
+    # 'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_U_cropped [1, 4]
+    # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_U_cropped [1, 4]
+    # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+    # nd_fd_geomservice_highres8-8_V_cropped
+    # 'A_ch0_scalefactor' : 0.005405405405405406, # nd adc. 1/185 for nd ADC range in nd_fd_radi_geomservice_highres8-8_V_cropped [4, 185].
+    # 'A_ch3_scalefactor' : 0.25, # num nd packets stacked. 1/4 for nd num packets in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
+    # 'A_ch4_scalefactor' : 0.25, # num first pixel triggers. 1/4 for nd num first pixel triggers in nd_fd_radi_geomservice_highres8-8_V_cropped [1, 4]
+    # 'B_ch0_scalefactor' : 0.000425531914893617, # fd adc. 1/2350 for induction ([-2350, 1745])
+    # FHC.nogaps.Z.7chs_NDx
+    'A_ch0_scalefactor' : 0.00078125, # nd adc. 1/1280 for nd ADC range in FHC.nogaps.Z.7chs_NDx [4, 1280].
+    'A_ch3_scalefactor' : 0.020833333333333332, # # num nd packets stacked. 1/48 for nd num packets in FHC.nogaps.Z.7chs_NDx
+    'A_ch4_scalefactor' : 0.03225806451612903, # num first pixel triggers. 1/31 for nd num first pixel triggers in FHC.nogaps.Z.7chs_NDx
+    'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.2395 for collection wire pitch of 0.479.
+    'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
+    'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/3195 for collection ([-900, 3195]).
+    # FHC.nogaps.U.7chs_NDx
+    # 'A_ch0_scalefactor' : 0.0008726003490401396, # nd adc. 1/1146 for nd ADC range in FHC.nogaps.U.7chs_NDx [4, 1146].
+    # 'A_ch3_scalefactor' : 0.025, # # num nd packets stacked. 1/40 for nd num packets in FHC.nogaps.U.7chs_NDx
+    # 'A_ch4_scalefactor' : 0.030303030303030304, # num first pixel triggers. 1/33 for nd num first pixel triggers in FHC.nogaps.U.7chs_NDx
+    # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+    # 'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
+    # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/2350 for induction ([-2350, 1745])
+    # FHC.nogaps.V.7chs_NDx
+    # 'A_ch0_scalefactor' : 0.0007473841554559044, # nd adc. 1/1338 for nd ADC range in FHC.nogaps.V.7chs_NDx [4, 1338].
+    # 'A_ch3_scalefactor' : 0.025, # # num nd packets stacked. 1/40 for nd num packets in FHC.nogaps.V.7chs_NDx
+    # 'A_ch4_scalefactor' : 0.05, # num first pixel triggers. 1/20 for nd num first pixel triggers in FHC.nogaps.V.7chs_NDx
+    # 'A_ch5_scalefactor' : 4.175365344467641, # wire distance, 1/0.23335 for induction wire pitch of 0.4667.
+    # 'A_ch6_scalefactor' : 0.02063983488132095, # nd module x, 1/48.45 for ND x [-48.45, 48.45]
+    # 'B_ch0_scalefactor' : 0.00031298904538341156, # fd adc. 1/2350 for induction ([-2350, 1745])
+    'name' : "FHC.nogaps.Z.7chs.NDx_refactor_test",
+    'gpu_id' : 0,
+    'checkpoints_dir' : '/home/awilkins/extrapolation_pix2pix/checkpoints',
+    'input_nc' :  7,
+    'output_nc' : 1,
+    'ngf' : 64,
+    'ndf' : 64,
+    'netD' : 'n_layers', # 'basic', 'n_layers', 'pixel'
+    'no_D_test': False, # Test not using an adversarial loss at all
+    'netG' : "unet_256", # 'unet_256', 'unet_128', 'resnet_6blocks', 'resnet_9blocks', 'resnet_9blocks_downres(4,10)_{1,2}', 'resnet_9blocks_downres(8,8)_{1,2,3}'
+    'n_layers_D' : 4, # -------------- CHANGED FROM THE USUAL 5 --------------
+    'norm' : 'batch', # 'batch', 'instance', 'none'
+    'init_type' : 'xavier', # 'normal', 'xavier', 'kaiming', 'orthogonal'
+    'init_gain' : 0.02,
+    'no_dropout' : False,
+    'serial_batches' : False,
+    'num_threads' : 4,
+    'batch_size' : 1,
+    'max_dataset_size' : 18000, # highres8-8_Z 17000, highres8-8_{V,U} 13000, FHC.nogaps.Z 18000
+    'display_freq' : 2000,
+    'print_freq' : 100,
+    'valid_freq' : 9000, # 'epoch' for at the end of each epoch
+    'num_valid' : 1000,
+    'save_latest_freq' : 10000,
+    'save_epoch_freq' : 4,
+    'phase' : 'train',
+    'n_epochs' : 12,
+    'n_epochs_decay' : 5,
+    'beta1' : 0.5,
+    # 'lamda_L1_reg' : 0.005, # 0 for no L1 regularisation
+    'adam_weight_decay' : 0.0001, # 0 is default, 0.001, 0.0001
+    'lr' : 0.0001, # 0.0002, 0.00005
+    'gan_mode' : 'vanilla', # 'vanilla', 'lsgan', 'wgangp
+    'pool_size' : 0,
+    'lr_policy' : 'linear', # 'linear', 'step', 'plateau', 'cosine'
+    'lr_decay_iters' : 50,
+    'isTrain' : True,
+    'lambda_pix' : 1000, # 1000
+    'nonzero_L1weight': 10, # used for none_weighted mask type
+    'lambda_channel' : 20, # 20
+    'G_output_layer' : 'tanh+clampcollection', # 'identity', 'tanh', 'linear', 'relu', 'tanh+clampcollection', 'tanh+clampinduction'
+    'direction' : 'AtoB',
+    'channel_offset' : 0, # Induction 112, collection 16
+    'tick_offset' : 0, # 58 NOTE both channel and tick offsets need to be nonzero for either of them to be applied
+    'unconditional_D' : False, # need True if we want to load into a cycleGAN setup. Currently needs to be True when down res is True.
+    'noise_layer' : False,
+    'kernel_size' : (3,5), # 3, 4, (3,5) (for unet only)
+    'outer_stride' : 2, # 2, (1,3) (for unet only)
+    'inner_stride_1' : (1,3), # 2, (1,3) (for unet only)
+    'padding_type' : 'reflect' # 'reflect', 'zeros'
+}
