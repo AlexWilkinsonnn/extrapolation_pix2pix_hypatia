@@ -47,7 +47,7 @@ def main(opt):
                 losses = model.get_current_losses()
                 loss_line = (
                     "total_iters={}, epoch={}, epoch_iter={} : G_GAN={:.5f}, G_pix={:.5f}, "
-                    "G_channel={:.5f}, D_real={:.5f}, D_fake={:/5f}"
+                    "G_channel={:.5f}, D_real={:.5f}, D_fake={:.5f}"
                 ).format(
                     total_iters, epoch, epoch_iter, losses['G_GAN'], losses['G_pix'],
                     losses['G_channel'], losses['D_real'], losses['D_fake']
