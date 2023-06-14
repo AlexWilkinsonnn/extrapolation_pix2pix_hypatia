@@ -21,8 +21,8 @@ class Dataset():
 
         if self.opt.unaligned:
             if not valid:
-                self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')
-                self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')
+                self.dir_A = os.path.join(opt.dataroot, "trainA")
+                self.dir_B = os.path.join(opt.dataroot, "trainB")
 
             else:
                 self.dir_A = os.path.join(opt.dataroot, 'validA')
@@ -33,11 +33,12 @@ class Dataset():
 
         else:
             if not valid:
-                self.dir_AB = os.path.join(opt.dataroot, opt.phase)  # get the image directory
+                self.dir_AB = os.path.join(opt.dataroot, "train") # get the image directory
             else:
                 self.dir_AB = os.path.join(opt.dataroot, "valid")
+            # get image paths
 
-            self.AB_paths = sorted(make_dataset(self.dir_AB, opt.max_dataset_size))  # get image paths
+            self.AB_paths = sorted(make_dataset(self.dir_AB, opt.max_dataset_size))
 
         self.input_nc = self.opt.input_nc
         self.output_nc = self.opt.output_nc
@@ -60,46 +61,31 @@ class Dataset():
         if self.opt.unaligned:
             A_path = self.A_paths[index]
             B_path = self.B_paths[index]
-
-            if self.opt.nd_sparse:
-                A = sparse.load_npz(A_path).todense()
-                if 'resnet' in self.opt.netG:
-                    if A.shape[1] == 1024:
-                        A = A[:, 112:-112, 58:-58]
-                    elif A.shape[1] == 512:
-                        A = A[:, 16:-16, 58:-58]
-                elif self.opt.netG == "unet_256" or self.opt.netG == "unet_128":
-                    if A.shape[1] == 480:
-                        padded_A = np.zeros((A.shape[0], 512, 4608))
-                        padded_A[:, 16:-16, 58:-58] = A
-                        A = padded_A
-
-            else:
-                A = np.load(A_path)
-
+            A = sparse.load_npz(A_path).todense() if self.opt.nd_sparse else np.load(A_path)
             B = np.load(B_path)
-            if 'resnet' in self.opt.netG:
-                if B.shape[1] == 1024:
-                    B = B[:, 112:-112, 58:-58]
-                elif B.shape[1] == 512:
-                    B = B[:, 16:-16, 58:-58]
-            elif self.opt.netG == "unet_256" or self.opt.netG == "unet_128":
-                if B.shape[1] == 480:
-                    padded_B = np.zeros((1, 512, 4608))
-                    padded_B[:, 16:-16, 58:-58] = B
-                    B = padded_B
 
         else:
             AB_path = self.AB_paths[index]
             AB = np.load(AB_path)
-
-            # split AB image into A and B
-            _, h, w = AB.shape
+            _, _, w = AB.shape
             w2 = int(w / 2)
             A = AB[:,:,:w2]
             B = AB[:,:,w2:]
 
-        # if self.opt.using_mask: # Keeping mask in last channel of nd image
+        if self.opt.crop_w or self.opt.crop_h:
+            A = A[:, self.opt.crop_h:-self.opt.crop_h, self.opt.crop_w:-self.opt.crop_w]
+            B = B[:, self.opt.crop_h:-self.opt.crop_h, self.opt.crop_w:-self.opt.crop_w]
+
+        elif self.opt.pad_w or self.opt.pad_h:
+            B_c, B_h, B_w = B.shape
+            padded_B = np.zeros((B_c, B_h + (2 * self.opt.pad_h), B_w + (2 * self.opt.pad_w)))
+            padded_B[:, self.opt.pad_h:-self.opt.pad_h, self.opt.pad_w:-self.opt.pad_w] = B
+            B = padded_B
+            A_c, A_h, A_w = A.shape
+            padded_A = np.zeros((A_c, A_h + (2 * self.opt.pad_h), A_w + (2 * self.opt.pad_w)))
+            padded_A[:, self.opt.pad_h:-self.opt.pad_h, self.opt.pad_w:-self.opt.pad_w] = A
+            A = padded_A
+
         if self.opt.mask_type in ['saved', 'saved_1rms']:
             full_mask = A[-1:, :, :]
             A = A[:-1, :, :]
@@ -109,86 +95,56 @@ class Dataset():
             B = B[:-1, :, :]
 
         else:
-            full_mask = np.zeros((1, B.shape[1], B.shape[2])) # Can't be bothered to refactor out the mask object when not in the data so have this.
+            # Can't be bothered to refactor out the mask object when not in the data so just
+            # throw an empty one around
+            full_mask = np.zeros((1, B.shape[1], B.shape[2]))
             if self.opt.mask_type == 'dont_use':
               A = A[:-1, :, :]
 
-        if not self.opt.unaligned: # Aligned images need the same channels so if input_nc != output_nc there will be zero channels in one of A and B.
+        # Aligned images need the same channels so if input_nc != output_nc
+        # there will be zero channels in one of A and B.
+        if not self.opt.unaligned:
             A = A[:self.opt.input_nc, :, :]
             B = B[:self.opt.output_nc, :, :]
 
-        # Adding back on nd ped for legacy
-        if self.nd_ped:
-            A[A != 0] += 74.0
-
-        B[0]*=self.opt.B_ch0_scalefactor
-
         input_nc = self.opt.input_nc - 1 if self.opt.noise_layer else self.opt.input_nc
 
-        if input_nc == 1:
-            A[0]*=self.opt.A_ch0_scalefactor
+        for i in range(self.opt.output_nc):
+            B[i] *= self.opt.B_ch_scalefactors[i]
+        for i in range(input_nc):
+            A[i] *= self.opt.A_ch_scalefactors[i]
 
-        elif input_nc == 4:
-            A[0]*=self.opt.A_ch0_scalefactor
-            A[1]*=self.opt.A_ch1_scalefactor
-            A[2]*=self.opt.A_ch2_scalefactor
-            A[3]*=self.opt.A_ch3_scalefactor
-
-        elif input_nc == 5:
-            A[0]*=self.opt.A_ch0_scalefactor
-            A[1]*=self.opt.A_ch1_scalefactor
-            A[2]*=self.opt.A_ch2_scalefactor
-            A[3]*=self.opt.A_ch3_scalefactor
-            A[4]*=self.opt.A_ch4_scalefactor
-
-        elif input_nc == 6:
-            A[0]*=self.opt.A_ch0_scalefactor
-            A[1]*=self.opt.A_ch1_scalefactor
-            A[2]*=self.opt.A_ch2_scalefactor
-            A[3]*=self.opt.A_ch3_scalefactor
-            A[4]*=self.opt.A_ch4_scalefactor
-            A[5]*=self.opt.A_ch5_scalefactor
-
-        elif input_nc == 7:
-            A[0]*=self.opt.A_ch0_scalefactor
-            A[1]*=self.opt.A_ch1_scalefactor
-            A[2]*=self.opt.A_ch2_scalefactor
-            A[3]*=self.opt.A_ch3_scalefactor
-            A[4]*=self.opt.A_ch4_scalefactor
-            A[5]*=self.opt.A_ch5_scalefactor
-            A[6]*=self.opt.A_ch6_scalefactor
-
-        A_tiles, B_tiles = [], []
-        samples = self.opt.samples if self.opt.samples else A.shape[2] // 512
-        mask = [] if self.opt.mask_type == 'saved' else [0]*samples
-        if self.opt.full_image: # Want to get a 512x512 crop of image (collection view images are saved as 512x4492).
-            for tiles in range(samples):
-                bad_tile = True
-                while bad_tile:
-                    tick = random.randint(0, A.shape[2] - 512)
-
-                    A_tile = A[:, :, tick:tick + 512]
-                    B_tile = B[:, :, tick:tick + 512]
-
-                    if self.opt.direction == 'AtoB' and A_tile[0].sum() != 0:
-                        bad_tile = False
-                    elif self.opt.direction == 'BtoA' and B_tile[0].sum() != 0:
-                        bad_tile = False
-
-                A_tiles.append(torch.from_numpy(A_tile).float())
-                B_tiles.append(torch.from_numpy(B_tile).float())
-                if self.opt.mask_type == 'saved':
-                    mask.append(torch.from_numpy(full_mask[:, :, tick:tick + 512]).float())
-
-            A = A_tiles
-            B = B_tiles
-
-        else:
+        if self.opt.samples == -1:
             A = torch.from_numpy(A).float()
             B = torch.from_numpy(B).float()
             mask = torch.from_numpy(full_mask[:, :, :]).float()
-            # if self.opt.using_mask:
-            #     mask.append(torch.from_numpy(full_mask[:, :, :]).float())
+
+        else:
+            raise NotImplementedError("I don't think opt.samples != -1 works anymore, check!")
+
+            # A_tiles, B_tiles = [], []
+            # samples = self.opt.samples if self.opt.samples else A.shape[2] // 512
+            # mask = []
+            # # Want to get a 512x512 crop of image (collection view images are saved as 512x4492).
+            # for _ in range(samples):
+            #     bad_tile = True
+            #     while bad_tile:
+            #         tick = random.randint(0, A.shape[2] - 512)
+
+            #         A_tile = A[:, :, tick:tick + 512]
+            #         B_tile = B[:, :, tick:tick + 512]
+
+            #         if self.opt.direction == 'AtoB' and A_tile[0].sum() != 0:
+            #             bad_tile = False
+            #         elif self.opt.direction == 'BtoA' and B_tile[0].sum() != 0:
+            #             bad_tile = False
+
+            #     A_tiles.append(torch.from_numpy(A_tile).float())
+            #     B_tiles.append(torch.from_numpy(B_tile).float())
+            #     mask.append(torch.from_numpy(full_mask[:, :, tick:tick + 512]).float())
+
+            # A = A_tiles
+            # B = B_tiles
 
         if self.opt.noise_layer:
             # noise RMS is ~4 so use 4/4096 as sigma for Gaussian noise channel
@@ -210,7 +166,6 @@ def make_dataset(dir, max_dataset_size=float("inf")):
 
     for root, _, fnames in sorted(os.walk(dir)):
         for fname in fnames:
-            # if is_image_file(fname):
             path = os.path.join(root, fname)
             images.append(path)
 

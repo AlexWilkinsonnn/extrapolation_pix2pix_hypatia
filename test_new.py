@@ -72,10 +72,10 @@ def main(opt):
             realB = visuals['real_B'].cpu()
             fakeB = visuals['fake_B'].cpu()
             mask = data['mask'].cpu()
-        realA/=opt.A_ch0_scalefactor
-        realB/=opt.B_ch0_scalefactor
-        fakeB/=opt.B_ch0_scalefactor
-        loss_pix, loss_channel = CustomLoss(realA.float(), fakeB.float(), realB.float(), 'AtoB', mask.float(), opt.B_ch0_scalefactor, opt.mask_type, opt.nonzero_L1weight, opt.rms)
+        realA/=opt.A_ch_scalefactors[0]
+        realB/=opt.B_ch_scalefactors[0]
+        fakeB/=opt.B_ch_scalefactors[0]
+        loss_pix, loss_channel = CustomLoss(realA.float(), fakeB.float(), realB.float(), 'AtoB', mask.float(), opt.B_ch_scalefactors[0], opt.mask_type, opt.nonzero_L1weight, opt.rms)
         # loss_abs_pix_bias, loss_abs_pix_bias_fractional, loss_channel_bias, loss_channel_bias_fractional, loss_event_bias, loss_event_bias_fractional = CustomLossHitBiasEstimator(
         #     realA.float(), fakeB.float(), realB.float(), mask.float(), opt.mask_type)
         loss_event_over20 = (fakeB.float() * (fakeB.float() > 20)).sum() - (realB.float() * (realB.float() > 20)).sum()
@@ -266,10 +266,10 @@ def main(opt):
             realB = visuals['real_B'].cpu()
             fakeB = visuals['fake_B'].cpu()
             mask = data['mask'].cpu()
-        realA/=opt.A_ch0_scalefactor
-        realB/=opt.B_ch0_scalefactor
-        fakeB/=opt.B_ch0_scalefactor
-        loss_pix, loss_channel = CustomLoss(realA.float(), fakeB.float(), realB.float(), 'AtoB', mask.float(), opt.B_ch0_scalefactor, opt.mask_type, opt.nonzero_L1weight, opt.rms)
+        realA/=opt.A_ch_scalefactors[0]
+        realB/=opt.B_ch_scalefactors[0]
+        fakeB/=opt.B_ch_scalefactors[0]
+        loss_pix, loss_channel = CustomLoss(realA.float(), fakeB.float(), realB.float(), 'AtoB', mask.float(), opt.B_ch_scalefactors[0], opt.mask_type, opt.nonzero_L1weight, opt.rms)
 
         realA = realA[0, 0].numpy().astype(int)
         realB = realB[0, 0].numpy().astype(int)
@@ -428,7 +428,7 @@ def main(opt):
         f.write("mean_channel_loss_absover20={}\n".format(np.mean(losses_channel_absover20)))
 
 if __name__ == '__main__':
-    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_highres8-8_U_cropped_13'
+    experiment_dir = '/home/awilkins/extrapolation_pix2pix/checkpoints/nd_fd_radi_geomservice_highres8-8_U_cropped_35'
 
     with open(os.path.join(experiment_dir, 'config.yaml')) as f:
         options = yaml.load(f, Loader=yaml.FullLoader)
@@ -445,7 +445,7 @@ if __name__ == '__main__':
     options['num_threads'] = 1
     options['phase'] = 'test'
     options['isTrain'] = False
-    options['epoch'] = 'best_loss_pix' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
+    options['epoch'] = 'best_bias_mu' # 'latest', 'best_{bias_mu, bias_sigma, loss_pix, loss_channel}', 'bias_good_mu_best_sigma'
 
     # if options['mask_type'] == 'none_weighted' or options['mask_type'] == 'saved_1rms':
     #     print("How do I want to compare L1 losses for models trained with none_weigthed and saved_time?")
