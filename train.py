@@ -3,14 +3,13 @@ from collections import namedtuple
 
 import numpy as np
 from scipy import stats
-import torch
 import yaml
 
 from model import Pix2pix
 from dataset import CustomDatasetDataLoader
 from losses import CustomLoss
 
-# torch.autograd.set_detect_anomaly(True)
+# import torch; torch.autograd.set_detect_anomaly(True)
 
 def main(opt):
     dataset = CustomDatasetDataLoader(opt).load_data()
@@ -289,7 +288,7 @@ def parse_arguments():
 if __name__ == '__main__':
     args = parse_arguments()
     with open(args.config, "r") as f:
-        options = yaml.load(f)
+        options = yaml.load(f, Loader=yaml.FullLoader)
 
     # If data is not on the current node, grab it from the share disk.
     if not os.path.exists(options['dataroot']):
