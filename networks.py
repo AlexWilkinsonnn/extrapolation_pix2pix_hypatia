@@ -341,7 +341,7 @@ def define_G(
     elif netG == "unet_256_k3-5_strides1":
         paddings = { 0 : 1, 1 : (1,2), 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : (1,2) }
         output_paddings = { 0 : 0, 1 : 1, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
-        strides = { 0 : (1,3), 1 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
+        strides = { 0 : (1,3), 1 : 2,, 2 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
         net = UnetGenerator(
             input_nc, output_nc, 8, ngf,
             norm_layer=norm_layer,
