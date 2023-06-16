@@ -60,7 +60,7 @@ no_D_test: False
 # resnet_9blocks | resnet_6blocks | resnet_9blocks_downres(4,10)_1 |
 # resnet_9blocks_downres(4,10)_2 | resnet_9blocks_downres(8,8)_1 | resnet_9blocks_downres(8,8)_2 |
 # resnet_9blocks_downres(8,8)_3 | unet_128 | unet_256 | unet_256_k3 | unet_256_k3-5 |
-# unet_256_k3-5_strides1 | unet_256_k3-5_strides2 | unet_256_strides1
+# unet_256_k3-5_strides1 | unet_256_k3-5_strides2 | unet_256_k3_strides1
 # downres modes produce an output smaller than input
 # (for experimenting with high resolution wire projections)
 netG: "unet_256"

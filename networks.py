@@ -305,11 +305,8 @@ def define_G(
             norm_layer=norm_layer, use_dropout=use_dropout, output_layer=output_layer
         )
 
-    # if kernel_size == 3 and outer_stride == 2 and inner_stride_1 == 2:
-    #     paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
-    #     output_paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
     elif netG == "unet_256_k3":
-        output_paddings = { 0 : 1, 1 : 1, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        output_paddings = { 0 : 1, 1 : 1, 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : 1 }
         net = UnetGenerator(
             input_nc, output_nc, 8, ngf,
             norm_layer=norm_layer,
@@ -319,12 +316,11 @@ def define_G(
             output_paddings=output_paddings
         )
 
-    # elif kernel_size == (3,5) and outer_stride == 2 and inner_stride_1 == 2:
-    #     paddings = { 'inner' : (1,2), 'outer' : (1,2), 'in1' : (1,2) }
-    #     output_paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
     elif netG == "unet_256_k3-5":
-        paddings = { 0 : (1,2), 1 : (1,2), 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : (1,2) }
-        output_paddings = { 0 : 1, 1 : 1, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        paddings = {
+            0 : (1,2), 1 : (1,2), 2 : (1,2), 3 : (1,2), 4 : (1,2), 5 : (1,2), 6 : (1,2), 7 : (1,2)
+        }
+        output_paddings = { 0 : 1, 1 : 1, 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : 1 }
         net = UnetGenerator(
             input_nc, output_nc, 8, ngf,
             norm_layer=norm_layer,
@@ -335,13 +331,12 @@ def define_G(
             paddings=paddings
         )
 
-    # elif kernel_size == (3,5) and outer_stride == (1,3) and inner_stride_1 == 2:
-    #     paddings = { 'inner' : (1,2), 'outer' : 1, 'in1' : (1,2) }
-    #     output_paddings = { 'inner' : 1, 'outer' : 0, 'in1' : 1 }
     elif netG == "unet_256_k3-5_strides1":
-        paddings = { 0 : 1, 1 : (1,2), 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : (1,2) }
-        output_paddings = { 0 : 0, 1 : 1, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
-        strides = { 0 : (1,3), 1 : 2,, 2 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
+        paddings = {
+            0 : 1, 1 : (1,2), 2 : (1,2), 3 : (1,2), 4 : (1,2), 5 : (1,2), 6 : (1,2), 7 : (1,2)
+        }
+        output_paddings = { 0 : 0, 1 : 1, 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : 1 }
+        strides = { 0 : (1,3), 1 : 2, 2 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
         net = UnetGenerator(
             input_nc, output_nc, 8, ngf,
             norm_layer=norm_layer,
@@ -353,12 +348,11 @@ def define_G(
             strides=strides
         )
 
-    # elif kernel_size == (3,5) and outer_stride == 2 and inner_stride_1 == (1,3):
-    #     paddings = { 'inner' : (1,2), 'outer' : (1,2), 'in1' : 1 }
-    #     output_paddings = { 'inner' : 1, 'outer' : (1,1), 'in1' : 0 }
     elif netG == "unet_256_k3-5_strides2":
-        paddings = { 0 : (1,2), 1 : 1, 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : (1,2) }
-        output_paddings = { 0 : 1, 1 : 0, 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        paddings = {
+            0 : (1,2), 1 : 1, 2 : (1,2), 3 : (1,2), 4 : (1,2), 5 : (1,2), 6 : (1,2), 7 : (1,2)
+        }
+        output_paddings = { 0 : 1, 1 : 0, 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : 1 }
         strides = { 0 : 2, 1 : (1,3), 2 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
         net = UnetGenerator(
             input_nc, output_nc, 8, ngf,
@@ -371,11 +365,8 @@ def define_G(
             strides=strides
         )
 
-    # elif kernel_size == 3 and outer_stride == (1,3) and inner_stride_1 == (1,3):
-    #     paddings = { 'inner' : 1, 'outer' : 1, 'in1' : 1 }
-    #     output_paddings = { 'inner' : 1, 'outer' : (0,2), 'in1' : (0,2) }
     elif netG == "unet_256_k3_strides1":
-        output_paddings = { 0 : (0,2), 1 : (0,2), 2 : 0, 3 : 0, 4 : 0, 5 : 0, 6 : 0, 7 : 1 }
+        output_paddings = { 0 : (0,2), 1 : (0,2), 2 : 1, 3 : 1, 4 : 1, 5 : 1, 6 : 1, 7 : 1 }
         strides = { 0 : (1,3), 1 : (1,3), 2 : 2, 3 : 2, 4 : 2, 5 : 2, 6 : 2, 7 : 2 }
         net = UnetGenerator(
             input_nc, output_nc, 8, ngf,
@@ -384,7 +375,6 @@ def define_G(
             output_layer=output_layer,
             kernel_size=3,
             output_paddings=output_paddings,
-            paddings=paddings,
             strides=strides
         )
 
@@ -806,7 +796,7 @@ class ResnetGenerator(nn.Module):
         """
         assert(n_blocks >= 0)
         assert(n_downsampling == len(downsampling_strides))
-        assert(n_downsampling == len(downsampling_more_features))
+        assert(n_downsampling == len(downupsampling_more_features))
         super(ResnetGenerator, self).__init__()
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
@@ -1047,17 +1037,17 @@ class ResnetGenerator(nn.Module):
             raise NotImplementedError('padding_type %s not implemented' % padding_type)
 
         if output_layer == 'tanh':
-            up += [nn.Tanh()]
+            model += [nn.Tanh()]
         elif output_layer == 'tanh+clampcollection':
             # [-900, 3195] adc range
-            up += [nn.Tanh(), CustomClampLayer(-0.28169014084507044, 1)]
+            model += [nn.Tanh(), CustomClampLayer(-0.28169014084507044, 1)]
         elif output_layer == 'tanh+clampinduction':
              # [-2350, 1745] adc range
-            up += [nn.Tanh(), CustomClampLayer(-1, 0.7425531914893617)]
+            model += [nn.Tanh(), CustomClampLayer(-1, 0.7425531914893617)]
         elif output_layer == 'identity':
-            up += [nn.Identity()]
+            model += [nn.Identity()]
         elif output_layer == 'relu':
-            up += [nn.ReLU(True)]
+            model += [nn.ReLU(True)]
         else:
             raise NotImplementedError('output_layer %s not implemented' % output_layer)
 

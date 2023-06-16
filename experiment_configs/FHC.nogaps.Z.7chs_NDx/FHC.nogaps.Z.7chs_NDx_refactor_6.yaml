@@ -34,7 +34,7 @@ ngf: 64
 ndf: 64
 netD: 'n_layers'
 no_D_test: False
-netG: "unet_256_strides1"
+netG: "unet_256_k3_strides1"
 n_layers_D: 4
 norm: 'batch'
 init_type: 'xavier'
