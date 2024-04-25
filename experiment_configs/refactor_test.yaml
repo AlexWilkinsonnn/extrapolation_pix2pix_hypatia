@@ -58,7 +58,7 @@ rms: 3.610753167639414
 serial_batches: False
 num_threads: 4
 batch_size : 1
-max_dataset_size: 18000
+max_dataset_size: 10000 # 18000
 
 display_freq : 2000
 print_freq: 100

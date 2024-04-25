@@ -99,7 +99,9 @@ def main(opt):
         )
 
         if opt.valid_freq == 'epoch':
-            valid(dataset_valid_iterator, dataset_valid, model, opt, epoch, total_iters)
+            valid(
+                dataset_valid_iterator, dataset_valid, model, opt, epoch, total_iters, best_metrics
+            )
 
 
 def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
