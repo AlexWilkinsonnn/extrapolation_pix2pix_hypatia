@@ -1,4 +1,4 @@
-import os, sys, re
+import os, re
 from collections import namedtuple
 
 import numpy as np
@@ -8,9 +8,8 @@ from array import array
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 
-sys.path.append('/home/awilkins/extrapolation_pix2pix')
-from model import *
-from dataset import *
+from pix2pix.model import *
+from pix2pix.dataset import *
 
 def main(optZ, optU, optV, opt_all):
     dataset_testZ = CustomDatasetDataLoader(optZ, valid=opt_all.valid).load_data()

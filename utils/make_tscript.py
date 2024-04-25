@@ -1,4 +1,4 @@
-import os, argparse, sys
+import os, argparse
 from collections import namedtuple
 
 import torch
@@ -6,8 +6,8 @@ import torch
 import yaml
 import numpy as np
 
-from model import *
-from dataset import *
+from pix2pix.model import *
+from pix2pix.dataset import *
 
 # Need to use this clamp output layer to allow trace
 class ClampModuleInduction(torch.nn.Module):
