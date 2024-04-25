@@ -5,9 +5,9 @@ import numpy as np
 from scipy import stats
 import yaml
 
-from model import Pix2pix
-from dataset import CustomDatasetDataLoader
-from losses import CustomLoss
+from pix2pix.model import Pix2pix
+from pix2pix.dataset import CustomDatasetDataLoader
+from pix2pix.losses import CustomLoss
 
 # import torch; torch.autograd.set_detect_anomaly(True)
 

@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 from torch.cuda.amp import custom_bwd, custom_fwd
 
-
 def get_scheduler(optimizer, opt):
     """Return a learning rate scheduler
 
@@ -44,7 +43,6 @@ def get_scheduler(optimizer, opt):
 
     return scheduler
 
-
 class Identity(nn.Module):
     def forward(self, x):
         return x
@@ -73,7 +71,6 @@ def get_norm_layer(norm_type='instance'):
         raise NotImplementedError('normalization layer [%s] is not found' % norm_type)
 
     return norm_layer
-
 
 def init_weights(net, init_type='normal', init_gain=0.02):
     """Initialize network weights.
@@ -119,7 +116,6 @@ def init_weights(net, init_type='normal', init_gain=0.02):
     print('initialize network with %s' % init_type)
     net.apply(init_func)  # apply the initialization function <init_func>
 
-
 def init_net(net, init_type='normal', init_gain=0.02, gpu_id=0):
     """Initialize a network: 1. register CPU/GPU device; 2. initialize the network weights
     Parameters:
@@ -137,7 +133,6 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_id=0):
     init_weights(net, init_type, init_gain=init_gain)
 
     return net
-
 
 def define_G(
     input_nc, output_nc, ngf, netG,
@@ -383,7 +378,6 @@ def define_G(
 
     return init_net(net, init_type, init_gain, gpu_id)
 
-
 def define_D(
     input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_id=0
 ):
@@ -433,7 +427,6 @@ def define_D(
         raise NotImplementedError('Discriminator model name [%s] is not recognized' % netD)
 
     return init_net(net, init_type, init_gain, gpu_id)
-
 
 class UnetGenerator(nn.Module):
     """Create a Unet-based generator"""
@@ -584,7 +577,6 @@ class UnetGenerator(nn.Module):
     def forward(self, input):
         return self.model(input)
 
-
 # Custom clamp operation implemetation
 class CustomClamp(torch.autograd.Function):
     """
@@ -610,7 +602,6 @@ def custom_clamp(input, min, max):
     :param max: The maximum value of the output.
     """
     return CustomClamp.apply(input, min, max)
-
 
 class CustomClampLayer(nn.Module):
     """
@@ -815,166 +806,6 @@ class ResnetGenerator(nn.Module):
         else:
             raise NotImplementedError('padding_type %s not implemented' % padding_type)
 
-        # # add downsampling layers
-        # if downres == 'none' or downres == '(4,10)_1':
-        #     n_downsampling = 2
-        #     strides = [2, (2,5) if downres == '(4,10)_1' else 2]
-        #     for i in range(n_downsampling):
-        #         mult = 2 ** i
-        #         stride = strides[i]
-
-        #         model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
-        #                   norm_layer(ngf * mult * 2),
-        #                   nn.ReLU(True)]
-
-        # elif downres == '(4,10)_2':
-        #     n_downsampling = 3
-        #     strides = [2, 1, (2,5)]
-        #     for i in range(n_downsampling):
-        #         mult = 2 ** i
-        #         stride = strides[i]
-
-        #         model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
-        #                   norm_layer(ngf * mult * 2),
-        #                   nn.ReLU(True)]
-
-        # elif downres == '(8,8)_1':
-        #     n_downsampling = 3
-        #     strides = [2, 2, 2]
-        #     for i in range(n_downsampling):
-        #         mult = 2 ** i
-        #         stride = strides[i]
-
-        #         model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
-        #                   norm_layer(ngf * mult * 2),
-        #                   nn.ReLU(True)]
-
-        # elif downres == '(8,8)_2':
-        #     n_downsampling = 5
-        #     strides = [2, 2, 2, 2, 2]
-        #     for i in range(n_downsampling):
-        #         mult = 2 ** i
-        #         stride = strides[i]
-
-        #         model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
-        #                   norm_layer(ngf * mult * 2),
-        #                   nn.ReLU(True)]
-
-        # elif downres == '(8,8)_3':
-        #     n_downsampling = 5
-        #     strides = [2, 2, 2, 2, 2]
-        #     more_features = [True, False, True, False, True]
-        #     mult = 1
-        #     for i in range(n_downsampling):
-        #         stride = strides[i]
-
-        #         if more_features[i]:
-        #             model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=stride, padding=1, bias=use_bias),
-        #                       norm_layer(ngf * mult * 2),
-        #                       nn.ReLU(True)]
-        #             mult *= 2
-
-        #         else:
-        #             model += [nn.Conv2d(ngf * mult, ngf * mult, kernel_size=3, stride=stride, padding=1, bias=use_bias),
-        #                       norm_layer(ngf * mult),
-        #                       nn.ReLU(True)]
-
-        # else:
-        #     raise NotImplementedError("downres type {} not implemented".format(downres))
-
-        # if downres != '(8,8)_3':
-        #     mult = 2 ** n_downsampling
-
-        # for i in range(n_blocks):       # add ResNet blocks
-        #     model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
-
-        # if downres == 'none':
-        #     for i in range(n_downsampling):  # add upsampling layers
-        #         mult = 2 ** (n_downsampling - i)
-        #         model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-        #                                      kernel_size=3, stride=2,
-        #                                      padding=1, output_padding=1,
-        #                                      bias=use_bias),
-        #                   norm_layer(int(ngf * mult / 2)),
-        #                   nn.ReLU(True)]
-
-        # elif downres == '(8,8)_2':
-        #     for i in range(n_downsampling):  # add some upsampling layers and collapse the remaining feature dimension
-        #         mult = 2 ** (n_downsampling - i)
-        #         if i < 2:
-        #             model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-        #                                          kernel_size=3, stride=2,
-        #                                          padding=1, output_padding=1,
-        #                                          bias=use_bias),
-        #                       norm_layer(int(ngf * mult / 2)),
-        #                       nn.ReLU(True)]
-        #         else:
-        #             model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-        #                                          kernel_size=3, stride=1,
-        #                                          padding=1, output_padding=0,
-        #                                          bias=use_bias),
-        #                       norm_layer(int(ngf * mult / 2)),
-        #                       nn.ReLU(True)]
-
-        # elif downres == '(8,8)_3':
-        #     more_features_reversed = list(reversed([True, False, True, False, True]))
-
-        #     for i in range(n_downsampling):  # add some upsampling layers and collapse the remaining feature dimension
-        #         if i < 2:
-        #             if more_features_reversed[i]:
-        #                 model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-        #                                              kernel_size=3, stride=2,
-        #                                              padding=1, output_padding=1,
-        #                                              bias=use_bias),
-        #                           norm_layer(int(ngf * mult / 2)),
-        #                           nn.ReLU(True)]
-        #                 mult = int(mult / 2)
-
-        #             else:
-        #                 model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult),
-        #                                              kernel_size=3, stride=2,
-        #                                              padding=1, output_padding=1,
-        #                                              bias=use_bias),
-        #                           norm_layer(int(ngf * mult)),
-        #                           nn.ReLU(True)]
-
-
-        #         else:
-        #             if more_features_reversed[i]:
-        #                 model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-        #                                              kernel_size=3, stride=1,
-        #                                              padding=1, output_padding=0,
-        #                                              bias=use_bias),
-        #                           norm_layer(int(ngf * mult / 2)),
-        #                           nn.ReLU(True)]
-        #                 mult = int(mult / 2)
-
-        #             else:
-        #                 model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult),
-        #                                              kernel_size=3, stride=1,
-        #                                              padding=1, output_padding=0,
-        #                                              bias=use_bias),
-        #                           norm_layer(int(ngf * mult)),
-        #                           nn.ReLU(True)]
-
-        # else:
-        #     for i in range(n_downsampling):  # no upsampling, just collapse feature dimension
-        #         mult = 2 ** (n_downsampling - i)
-        #         model += [nn.ConvTranspose2d(ngf * mult, int(ngf * mult / 2),
-        #                                      kernel_size=3, stride=1,
-        #                                      padding=1, output_padding=0,
-        #                                      bias=use_bias),
-        #                   norm_layer(int(ngf * mult / 2)),
-        #                   nn.ReLU(True)]
-
-        # if padding_type == 'reflect':
-        #     model += [nn.ReflectionPad2d(3)]
-        #     model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
-        # elif padding_type == 'zeros':
-        #     model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=3)]
-        # else:
-        #     raise NotImplementedError('padding_type %s not implemented' % padding_type)
-
         # add downsampling layers
         mult = 1
         for i in range(n_downsampling):
@@ -1055,6 +886,7 @@ class ResnetGenerator(nn.Module):
 
     def forward(self, input):
         return self.model(input)
+
 
 class ResnetBlock(nn.Module):
     """Define a Resnet block"""
@@ -1206,4 +1038,3 @@ class PixelDiscriminator(nn.Module):
 
     def forward(self, input):
         return self.net(input)
-

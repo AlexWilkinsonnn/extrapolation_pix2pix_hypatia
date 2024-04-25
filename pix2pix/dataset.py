@@ -19,26 +19,16 @@ class Dataset():
         self.opt = opt
         self.root = opt.dataroot
 
-        if self.opt.unaligned:
-            if not valid:
-                self.dir_A = os.path.join(opt.dataroot, "trainA")
-                self.dir_B = os.path.join(opt.dataroot, "trainB")
-
-            else:
-                self.dir_A = os.path.join(opt.dataroot, 'validA')
-                self.dir_B = os.path.join(opt.dataroot, 'validB')
-
-            self.A_paths = sorted(make_dataset(self.dir_A, opt.max_dataset_size))
-            self.B_paths = sorted(make_dataset(self.dir_B, opt.max_dataset_size))
+        if not valid:
+            self.dir_A = os.path.join(opt.dataroot, "trainA")
+            self.dir_B = os.path.join(opt.dataroot, "trainB")
 
         else:
-            if not valid:
-                self.dir_AB = os.path.join(opt.dataroot, "train") # get the image directory
-            else:
-                self.dir_AB = os.path.join(opt.dataroot, "valid")
-            # get image paths
+            self.dir_A = os.path.join(opt.dataroot, 'validA')
+            self.dir_B = os.path.join(opt.dataroot, 'validB')
 
-            self.AB_paths = sorted(make_dataset(self.dir_AB, opt.max_dataset_size))
+        self.A_paths = sorted(self._make_dataset(self.dir_A, opt.max_dataset_size))
+        self.B_paths = sorted(self._make_dataset(self.dir_B, opt.max_dataset_size))
 
         self.input_nc = self.opt.input_nc
         self.output_nc = self.opt.output_nc
@@ -58,19 +48,10 @@ class Dataset():
             B_paths (str) - - image paths (same as A_paths)
         """
         # read a image given a random integer index
-        if self.opt.unaligned:
-            A_path = self.A_paths[index]
-            B_path = self.B_paths[index]
-            A = sparse.load_npz(A_path).todense() if self.opt.nd_sparse else np.load(A_path)
-            B = np.load(B_path)
-
-        else:
-            AB_path = self.AB_paths[index]
-            AB = np.load(AB_path)
-            _, _, w = AB.shape
-            w2 = int(w / 2)
-            A = AB[:,:,:w2]
-            B = AB[:,:,w2:]
+        A_path = self.A_paths[index]
+        B_path = self.B_paths[index]
+        A = sparse.load_npz(A_path).todense() if self.opt.nd_sparse else np.load(A_path)
+        B = np.load(B_path)
 
         if self.opt.crop_w or self.opt.crop_h:
             A = A[:, self.opt.crop_h:-self.opt.crop_h, self.opt.crop_w:-self.opt.crop_w]
@@ -101,12 +82,6 @@ class Dataset():
             if self.opt.mask_type == 'dont_use':
               A = A[:-1, :, :]
 
-        # Aligned images need the same channels so if input_nc != output_nc
-        # there will be zero channels in one of A and B.
-        if not self.opt.unaligned:
-            A = A[:self.opt.input_nc, :, :]
-            B = B[:self.opt.output_nc, :, :]
-
         input_nc = self.opt.input_nc - 1 if self.opt.noise_layer else self.opt.input_nc
 
         for i in range(self.opt.output_nc):
@@ -114,7 +89,7 @@ class Dataset():
         for i in range(input_nc):
             A[i] *= self.opt.A_ch_scalefactors[i]
 
-        if self.opt.samples == -1:
+        if self.opt.samples == -1: # Don't take crops of the image
             A = torch.from_numpy(A).float()
             B = torch.from_numpy(B).float()
             mask = torch.from_numpy(full_mask[:, :, :]).float()
@@ -134,9 +109,7 @@ class Dataset():
             #         A_tile = A[:, :, tick:tick + 512]
             #         B_tile = B[:, :, tick:tick + 512]
 
-            #         if self.opt.direction == 'AtoB' and A_tile[0].sum() != 0:
-            #             bad_tile = False
-            #         elif self.opt.direction == 'BtoA' and B_tile[0].sum() != 0:
+            #         if A_tile[0].sum() != 0:
             #             bad_tile = False
 
             #     A_tiles.append(torch.from_numpy(A_tile).float())
@@ -151,25 +124,22 @@ class Dataset():
             noise = torch.normal(0, 0.0009765625, size=(1, A.size()[1], A.size()[2]))
             A = torch.cat((A, noise), 0)
 
-        if self.opt.unaligned:
-            return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path, 'mask' : mask}
-        else:
-            return {'A': A, 'B': B, 'A_paths': AB_path, 'B_paths': AB_path, 'mask' : mask}
+        return {'A': A, 'B': B, 'A_paths': A_path, 'B_paths': B_path, 'mask' : mask}
 
     def __len__(self):
         """Return the total number of images in the dataset."""
-        return len(self.A_paths) if self.opt.unaligned else len(self.AB_paths)
+        return len(self.A_paths)
 
-def make_dataset(dir, max_dataset_size=float("inf")):
-    images = []
-    assert os.path.isdir(dir), '%s is not a valid directory' % dir
+    def _make_dataset(self, dir, max_dataset_size=float("inf")):
+        images = []
+        assert os.path.isdir(dir), '%s is not a valid directory' % dir
 
-    for root, _, fnames in sorted(os.walk(dir)):
-        for fname in fnames:
-            path = os.path.join(root, fname)
-            images.append(path)
+        for root, _, fnames in sorted(os.walk(dir)):
+            for fname in fnames:
+                path = os.path.join(root, fname)
+                images.append(path)
 
-    return images[:min(max_dataset_size, len(images))]
+        return images[:min(max_dataset_size, len(images))]
 
 
 class CustomDatasetDataLoader():
@@ -188,13 +158,15 @@ class CustomDatasetDataLoader():
                 self.dataset,
                 batch_size=opt.batch_size,
                 shuffle=not opt.serial_batches,
-                num_workers=int(opt.num_threads))
+                num_workers=int(opt.num_threads)
+            )
         else:
              self.dataloader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=1,
                 shuffle=False,
-                num_workers=0)
+                num_workers=0
+            )
 
     def load_data(self):
         return self

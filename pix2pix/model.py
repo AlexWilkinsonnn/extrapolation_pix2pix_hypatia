@@ -3,9 +3,8 @@ from collections import OrderedDict
 
 import torch
 
-import networks
-import losses
-
+import pix2pix.networks as networks
+import pix2pix.losses as losses
 
 class Pix2pix():
     def __init__(self, opt):
@@ -384,7 +383,6 @@ class Pix2pix():
             self.real_A[:, :, self.ch_slicel:self.ch_sliceh, self.t_slicel:self.t_sliceh],
             self.fake_B[:, :, self.ch_slicel:self.ch_sliceh, self.t_slicel:self.t_sliceh],
             self.real_B[:, :, self.ch_slicel:self.ch_sliceh, self.t_slicel:self.t_sliceh],
-            self.opt.direction,
             self.mask,
             self.opt.B_ch_scalefactors[0],
             self.opt.mask_type,
