@@ -7,7 +7,7 @@
 # ch3 num ND packets stacked - 1 / max(num ND packets) for dataset
 # ch4 num first ND pixel triggers - 1 / max(num ND first pixel triggers) for dataset. Charge will
 #                                   usually cause successive triggers. Count the number of triggers
-#                                   which are not part of a longer sequency
+#                                   which are not part of a longer sequence
 # ch5 wire distance - 1 / (wire pitch / 2). Distance of centre of pixel to wire it was projected
 #                     onto. 1 / 0.2395 for collection, 1 / 0.23335 for induction.
 # ch6 ND module X - 1 / 48.45 for ND X [-48.5, 48.5]. Beam coord within ND drift module. Useful for

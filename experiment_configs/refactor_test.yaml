@@ -2,7 +2,6 @@ name: "FHC.nogaps.Z.7chs.NDx_refactor_test_2"
 
 dataroot: '/state/partition1/awilkins/FHC.nogaps.Z.7chs_NDx'
 dataroot_shared_disk: '/share/gpu1/awilkins/FHC.nogaps.Z.7chs_NDx'
-unaligned: True
 nd_sparse: True
 pad_w: 58
 pad_h: 16
@@ -21,7 +20,6 @@ B_ch_scalefactors:
   - 0.00031298904538341156
 input_nc: 7
 output_nc: 1
-direction: 'AtoB'
 channel_offset: 0
 tick_offset: 0
 noise_layer: False
@@ -63,7 +61,7 @@ batch_size : 1
 max_dataset_size: 18000
 
 display_freq : 2000
-print_freq: 100
+print_freq: 10
 valid_freq: 9000
 num_valid: 1000
 save_latest_freq: 10000
