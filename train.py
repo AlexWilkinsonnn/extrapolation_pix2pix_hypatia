@@ -35,7 +35,6 @@ def main(opt):
 
         for data in dataset:
             data['mask'].requires_grad = False
-            # print("{} {} {} {}".format(data['A'].size(), data['B'].size(), data['mask'].size(), data['A_paths']))
 
             total_iters += opt.batch_size
             epoch_iter += opt.batch_size
@@ -116,7 +115,6 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
         try:
             data = next(dataset_itr)
-
         except StopIteration:
             dataset_itr = iter(dataset)
             data = next(dataset_itr)
