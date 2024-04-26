@@ -81,8 +81,12 @@ def main(opt):
         realB /= opt.B_ch_scalefactors[0]
         fakeB /= opt.B_ch_scalefactors[0]
         loss_pix, loss_channel = CustomLoss(
-            realA.float(), fakeB.float(), realB.float(), 'AtoB', mask.float(),
-            opt.B_ch_scalefactors[0], opt.mask_type, opt.nonzero_L1weight, opt.rms
+            realA.float(), fakeB.float(), realB.float(),
+            mask.float(),
+            opt.B_ch_scalefactors[0],
+            opt.mask_type,
+            opt.nonzero_L1weight,
+            opt.rms
         )
         # loss_abs_pix_bias, loss_abs_pix_bias_fractional, loss_channel_bias, loss_channel_bias_fractional, loss_event_bias, loss_event_bias_fractional = CustomLossHitBiasEstimator(
         #     realA.float(), fakeB.float(), realB.float(), mask.float(), opt.mask_type)
@@ -339,8 +343,12 @@ def main(opt):
         realB /= opt.B_ch_scalefactors[0]
         fakeB /= opt.B_ch_scalefactors[0]
         loss_pix, loss_channel = CustomLoss(
-            realA.float(), fakeB.float(), realB.float(), 'AtoB', mask.float(),
-            opt.B_ch_scalefactors[0], opt.mask_type, opt.nonzero_L1weight, opt.rms
+            realA.float(), fakeB.float(), realB.float(),
+            mask.float(),
+            opt.B_ch_scalefactors[0],
+            opt.mask_type,
+            opt.nonzero_L1weight,
+            opt.rms
         )
 
         realA = realA[0, 0].numpy().astype(int)

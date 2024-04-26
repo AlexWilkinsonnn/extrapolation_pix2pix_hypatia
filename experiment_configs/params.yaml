@@ -7,8 +7,6 @@ checkpoints_dir: '/home/awilkins/extrapolation_pix2pix/checkpoints'
 # --- Data loading and prep ---
 dataroot: "/state/partition1/awilkins/..."
 dataroot_shared_disk: "/share/gpu...awilkins/..."
-# True: trainA, trainB, validA, validB | False: train, valid
-unaligned: True
 # If nd data is saved with the sparse library so needs to be read in differently
 nd_sparse: True
 # Zero padding or cropping to apply to data. Note height is channel and width is tick.
@@ -38,7 +36,6 @@ B_ch_scalefactors:
   - 0.00031298904538341156
 input_nc: 7
 output_nc: 1
-direction: 'AtoB'
 # If any of the image is zeros we can set channel_offset and tick_offset to ignore the zeros in
 #the loss and the discriminator
 channel_offset: 0

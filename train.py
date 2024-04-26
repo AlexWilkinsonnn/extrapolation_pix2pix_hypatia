@@ -142,8 +142,12 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
         fakeB /= opt.B_ch_scalefactors[0]
 
         loss_pix, loss_channel = CustomLoss(
-            realA, fakeB, realB, 'AtoB', mask, opt.B_ch_scalefactors[0], opt.mask_type,
-            opt.nonzero_L1weight, opt.rms
+            realA, fakeB, realB,
+            mask,
+            opt.B_ch_scalefactors[0],
+            opt.mask_type,
+            opt.nonzero_L1weight,
+            opt.rms
         )
         loss_event_over20 = (
             (fakeB.float() * (fakeB.float() > 20)).sum() -

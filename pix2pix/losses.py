@@ -237,7 +237,7 @@ def CustomLoss(
         loss_pix_zero = (
             (output * (target == 0) - target * (target == 0)).abs().sum() / (target == 0).sum()
         )
-        loss_pix = loss_pix_zero + nonzero_L1weight*loss_pix_nonzero
+        loss_pix = loss_pix_zero + nonzero_L1weight * loss_pix_nonzero
         loss_channel_nonzero = (
             ((target * (target != 0)).sum(3) - (output * (target != 0)).sum(3)).abs().sum() /
             (target != 0).sum(3).count_nonzero()
@@ -246,6 +246,6 @@ def CustomLoss(
             ((target * (target == 0)).sum(3) - (output * (target == 0)).sum(3)).abs().sum() / 
             (target == 0).sum(3).count_nonzero()
         )
-        loss_channel = loss_channel_zero + nonzero_L1weight*loss_channel_nonzero
+        loss_channel = loss_channel_zero + nonzero_L1weight * loss_channel_nonzero
 
     return loss_pix, loss_channel
