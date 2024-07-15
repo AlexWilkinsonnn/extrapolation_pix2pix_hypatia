@@ -17,7 +17,7 @@ def main(args):
     if not os.path.exists(out_dir_B):
         os.makedirs(out_dir_B)
 
-    cntr = 0
+    cntr = args.start_idx
 
     for fname in tqdm(os.listdir(args.input_dir)):
         try:
@@ -116,6 +116,10 @@ def parse_arguments():
         "--min_adc", type=int, default=0,
         help="minimum ND adc on a readout plane to make a pair"
     )
+    parser.add_argument(
+        "--start_idx", type=int, default=0,
+        help="number to start naming output pairs from"
+    )
 
     args = parser.parse_args()
 
@@ -123,7 +127,6 @@ def parse_arguments():
         raise argparse.ArgumentError(f"signal_type {args.signal_type} is not valid")
 
     return args
-
 
 if __name__ == "__main__":
     main(parse_arguments())
