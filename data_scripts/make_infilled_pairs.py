@@ -10,6 +10,9 @@ import sparse, h5py
 from tqdm import tqdm
 
 def main(args):
+    if args.batch_mode:
+        tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
+
     out_dir_A = os.path.join(args.output_dir, "allA")
     if not os.path.exists(out_dir_A):
         os.makedirs(out_dir_A)
@@ -17,16 +20,21 @@ def main(args):
     if not os.path.exists(out_dir_B):
         os.makedirs(out_dir_B)
 
+    tot_files = len(os.listdir(args.input_dir))
     cntr = args.start_idx
 
-    for fname in tqdm(os.listdir(args.input_dir)):
+    for i_fname, fname in enumerate(os.listdir(args.input_dir)):
+        print(f"\n----\n{i_fname} / {fname}")
         try:
             f = h5py.File(os.path.join(args.input_dir, fname))
         except Exception as e:
             print(f"Opening hdf5 file {fname} failed with:\n{e}")
             continue
+
+        tot_evids = len(f["nd_packet_wire_projs"])
         
-        for evid in f["nd_packet_wire_projs"].keys():
+        for i_evid, evid in enumerate(f["nd_packet_wire_projs"].keys()):
+            print(f"\n{i_evid} / {tot_evids}")
             for tpcset in f["nd_packet_wire_projs"][evid].keys():
                 for rop in f["nd_packet_wire_projs"][evid][tpcset].keys():
                     if (
@@ -62,7 +70,7 @@ def make_nd_pixelmap(data, plane_shape):
         "infilled" : defaultdict(float)
     }
 
-    for i in range(len(data)):
+    for i in tqdm(range(len(data))):
         ch = data["local_ch"][i]
         tick = data["tick"][i]
         chtick = (ch, tick)
@@ -71,12 +79,14 @@ def make_nd_pixelmap(data, plane_shape):
         arr[0, ch, tick] += adc
 
         if arr[0, ch, tick]:
+            nd_drift_dist = float(data["nd_drift_dist"][i])
             # Some nd drift distance are slightly -ve due to drift distance calculation weirdness
-            nd_drift_dist = max(float(data["nd_drift_dist"][i]), 0.0)
-            adc_weighted_avg_numerators["nd_drift_dist"][chtick] += adc * nd_drift_dist
-            arr[1, ch, tick] = (
-                adc_weighted_avg_numerators["nd_drift_dist"][chtick] / arr[0, ch, tick]
-            )
+            # Treat these as zero
+            if nd_drift_dist > 0.0:
+                adc_weighted_avg_numerators["nd_drift_dist"][chtick] += adc * nd_drift_dist
+                arr[1, ch, tick] = (
+                    adc_weighted_avg_numerators["nd_drift_dist"][chtick] / arr[0, ch, tick]
+                )
 
             fd_drift_dist = float(data["fd_drift_dist"][i])
             adc_weighted_avg_numerators["fd_drift_dist"][chtick] += adc * fd_drift_dist
@@ -121,6 +131,7 @@ def parse_arguments():
         "--start_idx", type=int, default=0,
         help="number to start naming output pairs from"
     )
+    parser.add_argument("--batch_mode", action="store_true")
 
     args = parser.parse_args()
 
