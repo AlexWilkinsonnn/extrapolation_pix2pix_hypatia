@@ -4,6 +4,7 @@ contained a channel with an infilled flag
 """
 import os, argparse
 from collections import defaultdict
+from functools import partialmethod
 
 import numpy as np
 import sparse, h5py
@@ -15,48 +16,40 @@ def main(args):
 
     out_dir_A = os.path.join(args.output_dir, "allA")
     if not os.path.exists(out_dir_A):
-        os.makedirs(out_dir_A)
+        raise ValueError(f"Output path {out_dir_A} does not exist")
     out_dir_B = os.path.join(args.output_dir, "allB")
     if not os.path.exists(out_dir_B):
-        os.makedirs(out_dir_B)
+        raise ValueError(f"Output path {out_dir_B} does not exist")
 
-    tot_files = len(os.listdir(args.input_dir))
+    f = h5py.File(os.path.join(args.input_file))
+
+    tot_evids = len(f["nd_packet_wire_projs"])
     cntr = args.start_idx
+    
+    for i_evid, evid in enumerate(f["nd_packet_wire_projs"].keys()):
+        print(f"\n----\n{i_evid} / {tot_evids}")
+        for tpcset in f["nd_packet_wire_projs"][evid].keys():
+            for rop in f["nd_packet_wire_projs"][evid][tpcset].keys():
+                if (
+                    args.signal_type == "Z" and rop != "2" and rop != "3" or
+                    args.signal_type == "V" and rop != "1" or
+                    args.signal_type == "U" and rop != "0"
+                ):
+                    continue
 
-    for i_fname, fname in enumerate(os.listdir(args.input_dir)):
-        print(f"\n----\n{i_fname} / {fname}")
-        try:
-            f = h5py.File(os.path.join(args.input_dir, fname))
-        except Exception as e:
-            print(f"Opening hdf5 file {fname} failed with:\n{e}")
-            continue
+                fd_arr = make_fd_pixelmap(f["fd_resp"][evid][tpcset][rop][:])
+                nd_arr = make_nd_pixelmap(
+                    f["nd_packet_wire_projs"][evid][tpcset][rop], fd_arr.shape[1:]
+                )
 
-        tot_evids = len(f["nd_packet_wire_projs"])
-        
-        for i_evid, evid in enumerate(f["nd_packet_wire_projs"].keys()):
-            print(f"\n{i_evid} / {tot_evids}")
-            for tpcset in f["nd_packet_wire_projs"][evid].keys():
-                for rop in f["nd_packet_wire_projs"][evid][tpcset].keys():
-                    if (
-                        args.signal_type == "Z" and rop != "2" and rop != "3" or
-                        args.signal_type == "V" and rop != "1" or
-                        args.signal_type == "U" and rop != "0"
-                    ):
-                        continue
+                if np.sum(nd_arr[0]) < args.min_adc:
+                    continue
 
-                    fd_arr = make_fd_pixelmap(f["fd_resp"][evid][tpcset][rop][:])
-                    nd_arr = make_nd_pixelmap(
-                        f["nd_packet_wire_projs"][evid][tpcset][rop], fd_arr.shape[1:]
-                    )
+                nd_sarr = sparse.COO.from_numpy(nd_arr)
+                sparse.save_npz(os.path.join(out_dir_A, f"{cntr}nd.npz"), nd_sarr)
+                np.save(os.path.join(out_dir_B, f"{cntr}fd.npy"), fd_arr)
 
-                    if np.sum(nd_arr[0]) < args.min_adc:
-                        continue
-
-                    nd_sarr = sparse.COO.from_numpy(nd_arr)
-                    sparse.save_npz(os.path.join(out_dir_A, f"{cntr}nd.npz"), nd_sarr)
-                    np.save(os.path.join(out_dir_B, f"{cntr}fd.npy"), fd_arr)
-
-                    cntr += 1
+                cntr += 1
 
 def make_fd_pixelmap(data):
     return np.expand_dims(data, axis=0).astype(np.int16)
@@ -116,7 +109,7 @@ def make_nd_pixelmap(data, plane_shape):
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("input_dir", type=str, help="dir with ndfd h5 files")
+    parser.add_argument("input_file", type=str, help="ndfd h5 file")
     parser.add_argument(
         "output_dir", type=str,
         help="output dir where 'allA' and allB' directories will be made a filled"
