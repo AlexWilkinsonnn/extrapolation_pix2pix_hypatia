@@ -71,7 +71,8 @@ def make_nd_pixelmap(data, plane_shape):
         arr[0, ch, tick] += adc
 
         if arr[0, ch, tick]:
-            nd_drift_dist = float(data["nd_drift_dist"][i])
+            # Some nd drift distance are slightly -ve due to drift distance calculation weirdness
+            nd_drift_dist = max(float(data["nd_drift_dist"][i]), 0.0)
             adc_weighted_avg_numerators["nd_drift_dist"][chtick] += adc * nd_drift_dist
             arr[1, ch, tick] = (
                 adc_weighted_avg_numerators["nd_drift_dist"][chtick] / arr[0, ch, tick]
