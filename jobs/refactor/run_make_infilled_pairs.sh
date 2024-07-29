@@ -3,7 +3,7 @@
 #SBATCH -N 1
 #SBATCH -c 2
 #SBATCH -J make_infill_pairs
-#SBATCH --array=1-3
+#SBATCH --array=1-180
 #SBATCH --error=/home/awilkins/extrapolation_pix2pix/jobs/logs/err/%x.%A_%a.err
 #SBATCH --output=/home/awilkins/extrapolation_pix2pix/jobs/logs/out/%x.%A_%a.out
 
@@ -14,6 +14,8 @@ INPUT_DIR=$1
 OUTPUT_DIR=$2
 SIGNAL_TYPE=$3
 MIN_ADC=$4
+SIGMASK_MAX_TICK=$5
+SIGMASK_MAX_CH=$5
 
 START_IDX_STEP=100000
 
@@ -38,6 +40,8 @@ source setups/setup.sh
 
 python data_scripts/make_infilled_pairs.py --min_adc $MIN_ADC \
                                            --start_idx $start_idx \
+                                           --signalmask_max_tick $SIGMASK_MAX_TICK \
+                                           --signalmask_max_ch $SIGMASK_MAX_CH \
                                            --batch_mode \
                                            $input_file \
                                            $OUTPUT_DIR \
