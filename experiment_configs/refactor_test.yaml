@@ -1,4 +1,4 @@
-name: "FHC.nogaps.Z.7chs.NDx_refactor_test_2"
+name: "FHC.nogaps.Z.7chs.NDx_refactor_test_3"
 
 dataroot: '/state/partition1/awilkins/FHC.nogaps.Z.7chs_NDx'
 dataroot_shared_disk: '/share/gpu1/awilkins/FHC.nogaps.Z.7chs_NDx'
@@ -34,12 +34,12 @@ netD: 'n_layers'
 no_D_test: False
 netG: "unet_256"
 n_layers_D: 4
-norm: 'batch'
+norm: 'instance'
 init_type: 'xavier'
 init_gain: 0.02
 no_dropout: False
-n_epochs: 12
-n_epochs_decay: 5
+n_epochs: 24
+n_epochs_decay: 18
 beta1: 0.5
 adam_weight_decay: 0.0001
 lr: 0.0001
@@ -57,8 +57,8 @@ rms: 3.610753167639414
 
 serial_batches: False
 num_threads: 4
-batch_size : 1
-max_dataset_size: 10000 # 18000
+batch_size : 8
+max_dataset_size: 18000
 
 display_freq : 2000
 print_freq: 100
