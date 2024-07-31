@@ -1,0 +1,67 @@
+name: "exptest"
+
+dataroot: "/state/partition1/awilkins/pix2pix_data/thesis_infilled_6chs_minadc100_Z"
+dataroot_shared_disk: "/share/gpu2/awilkins/pix2pix_data/thesis_infilled_6chs_minadc100_Z"
+nd_sparse: True
+pad_w: 0
+pad_h: 0
+crop_w: 0
+crop_h: 0
+mask_type: 'saved'
+A_ch_scalefactors:
+  - 0.0012919896640826874
+  - 0.14085904245475275
+  - 0.052659009620397934
+  - 0.0026041666666666665
+  - 4.175365344467641
+  - 1.0
+B_ch_scalefactors:
+  - 0.00031298904538341156
+input_nc: 6
+output_nc: 1
+channel_offset: 0
+tick_offset: 0
+noise_layer: False
+samples: -1
+
+gpu_id: 0
+checkpoints_dir: "/home/awilkins/extrapolation_pix2pix/checkpoints/thesis_infilled_6chs_minadc100_Z"
+
+ngf: 64
+ndf: 64
+netD: 'n_layers'
+no_D_test: False
+netG: "resnet_9blocks"
+n_layers_D: 4
+norm: 'instance'
+init_type: 'xavier'
+init_gain: 0.02
+no_dropout: False
+n_epochs: 2
+n_epochs_decay: 2
+beta1: 0.5
+adam_weight_decay: 0.0001
+lr: 0.0001
+gan_mode: 'vanilla'
+lr_policy : 'linear'
+lr_decay_iters : 50
+isTrain: True
+lambda_pix: 1000
+nonzero_L1weight: 10
+lambda_channel: 20
+G_output_layer: 'tanh+clampcollection'
+unconditional_D: False
+padding_type: 'reflect'
+rms: 3.610753167639414
+
+serial_batches: False
+num_threads: 4
+batch_size : 2
+max_dataset_size: 500
+
+display_freq : 200
+print_freq: 100
+valid_freq: "epoch"
+num_valid: 1000
+save_latest_freq: 500
+save_epoch_freq: 1
