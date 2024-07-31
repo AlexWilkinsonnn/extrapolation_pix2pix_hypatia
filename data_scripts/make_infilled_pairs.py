@@ -56,7 +56,7 @@ def main(args):
                 cntr += 1
 
 def make_fd_pixelmap(data):
-    return np.expand_dims(data, axis=0).astype(np.int16)
+    return np.expand_dims(data, axis=0).astype(float)
 
 def make_signalmask(nd_pixelmap, max_tick_shift, max_ch_shift):
     nd_adcs = nd_pixelmap[0]

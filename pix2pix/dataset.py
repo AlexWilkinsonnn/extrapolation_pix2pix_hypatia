@@ -51,7 +51,7 @@ class Dataset():
         A_path = self.A_paths[index]
         B_path = self.B_paths[index]
         A = sparse.load_npz(A_path).todense() if self.opt.nd_sparse else np.load(A_path)
-        B = np.load(B_path)
+        B = np.load(B_path).astype(float) # NOTE not necessary if make_infilled_pairs is run again
 
         if self.opt.crop_w or self.opt.crop_h:
             A = A[:, self.opt.crop_h:-self.opt.crop_h, self.opt.crop_w:-self.opt.crop_w]
