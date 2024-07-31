@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p GPU
 #SBATCH -N1
-#SBATCH -c4
+#SBATCH -c8
 #SBATCH --gres=gpu:a100:1
 #SBATCH --nodelist=compute-gpu-0-2
 #SBATCH --error=/home/awilkins/extrapolation_pix2pix/jobs/logs/err/job.%x.%j.err
