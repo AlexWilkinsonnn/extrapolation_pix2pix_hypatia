@@ -1,3 +1,55 @@
+###################################################################################################
+# A
+# ch0 ND adc                 - 1 / max(abs(ND adc)) for dataset
+# ch1 sqrt(ND drift)         - 1 / sqrt(50.4) from max ND module drift
+# ch2 sqrt(FD drift)         - 1 / sqrt(360.624). Using readout of 4492 ticks -> 2246 us ->
+#                              360.624 cm maximum FD drift distance
+#                              (using drift speed 1.60563 mm/us)
+# ch3 num ND packets stacked - 1 / max(num ND packets) for dataset
+# ch4 wire distance          - 1 / (wire pitch / 2). Distance of pixel centre to wire it was
+#                              projected onto. 1 / 0.2395 collection, 1 / 0.23335 induction.
+# ch5 Infilled               - 1 / 1 flag for if packet is from infill network
+# NOTE Channels ND drift, FD drift, wire distance, Infilled break down when multiple packets get
+# mapped to the same wire+tick. In this case just taking the adc weighted averge
+# B
+# ch0 FD adc - 1 / max(abs(FD adc)) for adc data type. 1 / 3195 for collection [-900, 3195],
+#              1 / 2350 for induction [-2350, 1745]
+###################################################################################################
+
+# thesis_infilled_6chs_minadc100_Z
+A_ch_scalefactors:
+  - 0.0012919896640826874
+  - 0.14085904245475275
+  - 0.052659009620397934
+  - 0.0026041666666666665
+  - 4.175365344467641
+  - 1.0
+B_ch_scalefactors:
+  - 0.00031298904538341156
+
+# thesis_infilled_6chs_minadc100_U
+A_ch_scalefactors:
+  - 0.0009940357852882703
+  - 0.14085904245475275
+  - 0.052659009620397934
+  - 0.002066115702479339
+  - 4.175365344467641
+  - 1.0
+B_ch_scalefactors:
+  - 0.000425531914893617
+
+# thesis_infilled_6chs_minadc100_V
+A_ch_scalefactors:
+  - 0.0012285012285012285
+  - 0.14085904245475275
+  - 0.052659009620397934
+  - 0.0025252525252525255
+  - 4.175365344467641
+  - 1.0
+B_ch_scalefactors:
+  - 0.000425531914893617
+
+###################################################################################################
 # A
 # ch0 ND adc - 1 / max(abs(ND adc)) for dataset
 # ch1 sqrt(ND drift) - 1 / sqrt(50.4) from max ND module drift
@@ -17,6 +69,7 @@
 # B
 # ch0 FD adc - 1 / max(abs(FD adc)) for adc data type. 1 / 3195 for collection [-900, 3195],
 #              1 / 2350 for induction [-2350, 1745]
+###################################################################################################
 
 # nd_fd_radi_geomservice_Z && nd_fd_geomservice_Z_wiredistance
 A_ch_scalefactors:
