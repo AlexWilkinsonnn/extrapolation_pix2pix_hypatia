@@ -59,9 +59,9 @@ num_threads: 4
 batch_size : 2
 max_dataset_size: 500
 
-display_freq : 200
-print_freq: 100
+display_freq : 50
+print_freq: 50
 valid_freq: "epoch"
-num_valid: 1000
+num_valid: 50
 save_latest_freq: 500
 save_epoch_freq: 1
