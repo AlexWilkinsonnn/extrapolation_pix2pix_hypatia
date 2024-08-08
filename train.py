@@ -114,6 +114,7 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
     dataset_itr = iter(dataset)
 
     G_pix_losses, G_channel_losses = [], []
+    G_pix_losses_orig, G_channel_losses_orig = [], []
     losses_event_over20, losses_event_over20_fractional = [], []
     losses_event_underneg20, losses_event_underneg20_fractional = [], []
     for i in range(len(dataset)): # Run the generator on some validation images for visualisation
@@ -128,6 +129,10 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
         model.set_input(data)
         model.test()
+
+        losses_orig = model.get_current_losses()
+        G_pix_losses_orig.append(losses_orig["G_pix"])
+        G_channel_losses_orig.append(losses_orig["G_channel"])
 
         visuals = model.get_current_visuals()
 
@@ -258,8 +263,14 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
     ) as f:
         yaml.dump(best_metrics, f)
 
-    loss_line = "VALID: Epoch: {} Total Iter: {} -- G_pix={} G_channel={}".format(
-        epoch, total_itrs, np.mean(G_pix_losses), np.mean(G_channel_losses)
+    loss_line = (
+        "VALID: Epoch: {} Total Iter: {} -- "
+        "G_pix={} G_channel={} "
+        "G_pix_unscaled={} G_channel_unscaled={}"
+    ).format(
+        epoch, total_itrs,
+        np.mean(G_pix_losses_orig), np.mean(G_channel_losses_orig),
+        np.mean(G_pix_losses), np.mean(G_channel_losses)
     )
     print(loss_line)
     with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
