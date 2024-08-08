@@ -24,39 +24,42 @@ def main(opt):
     model = Pix2pix(opt)
     print("model [%s] was created" % type(model).__name__)
     model.setup(opt)
-    total_iters = 0
+    n_iter = 0
 
     best_metrics = {}
 
-    for epoch in range(1, opt.n_epochs + opt.n_epochs_decay + 1):
+    with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
+        f.write("Iters per epoch: {}\n".format(len(dataset)))
+
+    for epoch in range(opt.n_epochs + opt.n_epochs_decay):
+        with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
+            f.write("==== Epoch {} ====\n".format(epoch))
+
         epoch_start_time = time.time()
-        epoch_iter = 0
         model.update_learning_rate()
 
-        for data in dataset:
+        for n_iter_epoch, data in enumerate(dataset):
             data['mask'].requires_grad = False
 
-            total_iters += opt.batch_size
-            epoch_iter += opt.batch_size
             model.set_input(data)
             model.optimize_parameters()
 
-            if total_iters % opt.display_freq == 0 or total_iters % opt.print_freq == 0:
+            if (n_iter + 1) % opt.display_freq == 0 or (n_iter + 1) % opt.print_freq == 0:
                 losses = model.get_current_losses()
                 loss_line = (
-                    "total_iters={}, epoch={}, epoch_iter={} : G_GAN={:.5f}, G_pix={:.5f}, "
-                    "G_channel={:.5f}, D_real={:.5f}, D_fake={:.5f}"
+                    "Epoch: {} Iter: {} Total Iter: {} -- G_GAN={:.5f} G_pix={:.5f} "
+                    "G_channel={:.5f} D_real={:.5f} D_fake={:.5f}"
                 ).format(
-                    total_iters, epoch, epoch_iter, losses['G_GAN'], losses['G_pix'],
+                    epoch, n_iter_epoch, n_iter, losses['G_GAN'], losses['G_pix'],
                     losses['G_channel'], losses['D_real'], losses['D_fake']
                 )
                 with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
                     f.write(loss_line + '\n')
 
-                if total_iters % opt.print_freq == 0:
+                if (n_iter + 1) % opt.print_freq == 0:
                     print(loss_line)
 
-                if total_iters % opt.display_freq == 0:
+                if (n_iter + 1) % opt.display_freq == 0:
                     visuals = model.get_current_visuals()
 
                     image_realA = visuals['real_A'][0].data # Taking first in the batch to save
@@ -76,35 +79,37 @@ def main(opt):
                     np.save(os.path.join(opt.checkpoints_dir, opt.name, "fakeB.npy"), arr_fakeB[0])
 
             # cache our latest model every <save_latest_freq> iterations
-            if total_iters % opt.save_latest_freq == 0:
-                print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
+            if (n_iter + 1) % opt.save_latest_freq == 0:
+                print('saving the latest model (epoch %d, total_iters %d)' % (epoch, n_iter))
                 save_suffix = 'latest'
                 model.save_networks(save_suffix)
 
-            if opt.valid_freq != 'epoch' and total_iters % opt.valid_freq == 0:
+            if opt.valid_freq != 'epoch' and n_iter % opt.valid_freq == 0:
                 valid(
-                    dataset_valid_iterator, dataset_valid, model, opt, epoch, total_iters,
-                    best_metrics
+                    dataset_valid_iterator, dataset_valid, model, opt, epoch, n_iter, best_metrics
                 )
 
-        if epoch % opt.save_epoch_freq == 0: # cache our model every <save_epoch_freq> epochs
-            print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
+            n_iter += 1
+
+        if (epoch + 1) % opt.save_epoch_freq == 0: # cache our model every <save_epoch_freq> epochs
+            print('saving the model at the end of epoch %d, total iters %d' % (epoch, n_iter))
             model.save_networks('latest')
             model.save_networks(epoch)
 
         print(
             "End of epoch {} / {} \t Time Taken: {} sec".format(
-                epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time
+                epoch + 1, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time
             )
         )
 
         if opt.valid_freq == 'epoch':
-            valid(
-                dataset_valid_iterator, dataset_valid, model, opt, epoch, total_iters, best_metrics
-            )
+            valid(dataset_valid_iterator, dataset_valid, model, opt, epoch, n_iter, best_metrics)
 
 
 def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
+    with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
+        f.write("== Validation Loop ==\n")
+
     model.eval()
     dataset_itr = iter(dataset)
 
@@ -212,54 +217,38 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
 
     loss_pix, loss_channel = float(np.mean(G_pix_losses)), float(np.mean(G_channel_losses))
 
-    if 'bias_mu' not in best_metrics:
+    if 'bias_mu' not in best_metrics or abs(best_metrics['bias_mu']) > abs(bias_mu):
         best_metrics['bias_mu'] = bias_mu
         best_metrics['bias_mu_itr'] = total_itrs
+        best_metrics['bias_mu_epoch'] = epoch
         model.save_networks("best_bias_mu")
 
-    elif abs(best_metrics['bias_mu']) > abs(bias_mu):
-        best_metrics['bias_mu'] = bias_mu
-        best_metrics['bias_mu_itr'] = total_itrs
-        model.save_networks("best_bias_mu")
-
-    if 'bias_sigma' not in best_metrics:
+    if 'bias_sigma' not in best_metrics or best_metrics['bias_sigma'] > bias_sigma:
         best_metrics['bias_sigma'] = bias_sigma
         best_metrics['bias_sigma_itr'] = total_itrs
-        model.save_networks("best_bias_sigma")
-
-    elif best_metrics['bias_sigma'] > bias_sigma:
-        best_metrics['bias_sigma'] = bias_sigma
-        best_metrics['bias_sigma_itr'] = total_itrs
+        best_metrics['bias_sigma_epoch'] = epoch
         model.save_networks("best_bias_sigma")
 
     if abs(bias_mu) < abs(0.05):
-        if 'bias_good_mu_best_sigma' not in best_metrics:
+        if (
+            'bias_good_mu_best_sigma' not in best_metrics or
+            best_metrics['bias_good_mu_best_sigma'][1] > bias_sigma
+        ):
             best_metrics['bias_good_mu_best_sigma'] = (bias_mu, bias_sigma)
             best_metrics['bias_good_mu_best_sigma_itr'] = total_itrs
+            best_metrics['bias_good_mu_best_sigma_epoch'] = epoch
             model.save_networks("bias_good_mu_best_sigma")
 
-        elif best_metrics['bias_good_mu_best_sigma'][1] > bias_sigma:
-            best_metrics['bias_good_mu_best_sigma'] = (bias_mu, bias_sigma)
-            best_metrics['bias_good_mu_best_sigma_itr'] = total_itrs
-            model.save_networks("bias_good_mu_best_sigma")
-
-    if 'loss_pix' not in best_metrics:
+    if 'loss_pix' not in best_metrics or best_metrics['loss_pix'] > loss_pix:
         best_metrics['loss_pix'] = loss_pix
         best_metrics['loss_pix_itr'] = total_itrs
+        best_metrics['loss_pix_epoch'] = epoch
         model.save_networks("best_loss_pix")
 
-    elif best_metrics['loss_pix'] > loss_pix:
-        best_metrics['loss_pix'] = loss_pix
-        best_metrics['loss_pix_itr'] = total_itrs
-        model.save_networks("best_loss_pix")
-
-    if 'loss_channel' not in best_metrics:
+    if 'loss_channel' not in best_metrics or best_metrics['loss_channel'] > loss_channel:
         best_metrics['loss_channel'] = loss_channel
         best_metrics['loss_channel_itr'] = total_itrs
-        model.save_networks("best_loss_channel")
-    elif best_metrics['loss_channel'] > loss_channel:
-        best_metrics['loss_channel'] = loss_channel
-        best_metrics['loss_channel_itr'] = total_itrs
+        best_metrics['loss_channel_epoch'] = epoch
         model.save_networks("best_loss_channel")
 
     print(best_metrics)
@@ -269,8 +258,8 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
     ) as f:
         yaml.dump(best_metrics, f)
 
-    loss_line = "VALID:total_iters={}, epoch={} : G_pix={}, G_channel={}".format(
-        total_itrs, epoch, np.mean(G_pix_losses), np.mean(G_channel_losses)
+    loss_line = "VALID: Epoch: {} Total Iter: {} -- G_pix={} G_channel={}".format(
+        epoch, total_itrs, np.mean(G_pix_losses), np.mean(G_channel_losses)
     )
     print(loss_line)
     with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
