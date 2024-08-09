@@ -298,7 +298,7 @@ def main(opt):
             new_handles = [Line2D([], [], c=h.get_edgecolor()) for h in handles]
             plt.legend(handles=new_handles, labels=labels, prop={'size': 14})
 
-            plt.title("Channel {} in ROP".format(ch), fontsize=16)
+            plt.title("Channel {} in ROP".format(ch - ch_min), fontsize=16)
 
             fig.tight_layout()
             pdf.savefig(bbox_inches='tight')
@@ -500,7 +500,7 @@ def main(opt):
         new_handles = [Line2D([], [], c=h.get_edgecolor()) for h in handles]
         plt.legend(handles=new_handles, labels=labels, prop={'size': 14})
 
-        plt.title("Channel {} in ROP".format(ch), fontsize=16)
+        plt.title("Channel {} in ROP".format(ch - ch_min), fontsize=16)
 
         fig.tight_layout()
         pdf2.savefig(bbox_inches='tight')
