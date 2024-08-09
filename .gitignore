@@ -15,6 +15,7 @@ tscripts/
 jobs/mean_rms.txt
 results/nd_fd_*
 results/FHC*
+results/thesis*
 jobs/exportroot_setups
 jobs/logs
 
