@@ -36,7 +36,6 @@ def main(opt):
             f.write("==== Epoch {} ====\n".format(epoch))
 
         epoch_start_time = time.time()
-        model.update_learning_rate()
 
         for n_iter_epoch, data in enumerate(dataset):
             data['mask'].requires_grad = False
@@ -90,6 +89,8 @@ def main(opt):
                 )
 
             n_iter += 1
+
+        model.update_learning_rate()
 
         if (epoch + 1) % opt.save_epoch_freq == 0: # cache our model every <save_epoch_freq> epochs
             print('saving the model at the end of epoch %d, total iters %d' % (epoch, n_iter))
