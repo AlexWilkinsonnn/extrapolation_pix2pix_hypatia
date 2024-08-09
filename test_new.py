@@ -166,7 +166,7 @@ def main(opt):
                 vmin = -vmax
                 cmap = 'seismic'
             else:
-                vmax = adc_max
+                vmax = adc_max * 0.8 # Makes images sharper
                 vmin = adc_min
                 cmap = 'viridis'
 
@@ -224,7 +224,7 @@ def main(opt):
                 )
                 ax[1].set_title("Output", fontsize=16)
 
-            for a in ax: a.set_axis_off()
+            # for a in ax: a.set_axis_off()
 
             fig.tight_layout()
             pdf.savefig(bbox_inches='tight')
@@ -372,7 +372,7 @@ def main(opt):
             vmin = -vmax
             cmap = 'seismic'
         else:
-            vmax = adc_max
+            vmax = adc_max * 0.8 # Makes images sharper
             vmin = adc_min
             cmap = 'viridis'
 
@@ -429,7 +429,7 @@ def main(opt):
             )
             ax[1].set_title("Output", fontsize=16)
 
-        for a in ax: a.set_axis_off()
+        # for a in ax: a.set_axis_off()
 
         fig.tight_layout()
         pdf2.savefig(bbox_inches='tight')
