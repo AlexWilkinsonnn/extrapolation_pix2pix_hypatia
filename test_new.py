@@ -19,7 +19,7 @@ INCLUDE_REALA = True
 def main(opt):
     out_dir = os.path.join(
         '/home/awilkins/extrapolation_pix2pix/results',
-        os.path.join(os.path.basename(opt.dataroot), opt.name)
+        os.path.join(os.path.basename(opt.dataroot), opt.name, opt.epoch)
     )
 
     if not os.path.exists(out_dir):
