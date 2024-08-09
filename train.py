@@ -149,6 +149,7 @@ def valid(dataset_itr, dataset, model, opt, epoch, total_itrs, best_metrics):
         realB = visuals['real_B'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
         fakeB = visuals['fake_B'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
         mask = data['mask'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
+        fakeB *= mask
         realB /= opt.B_ch_scalefactors[0]
         fakeB /= opt.B_ch_scalefactors[0]
 

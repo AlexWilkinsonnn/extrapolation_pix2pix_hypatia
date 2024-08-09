@@ -8,16 +8,19 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.lines import Line2D
 
-from model import Pix2pix
-from dataset import CustomDatasetDataLoader
-from losses import CustomLoss
+from pix2pix.model import Pix2pix
+from pix2pix.dataset import CustomDatasetDataLoader
+from pix2pix.losses import CustomLoss
 
 plt.rc('font', family='serif')
 INCLUDE_REALA = True
 
 
 def main(opt):
-    out_dir = os.path.join('/home/awilkins/extrapolation_pix2pix/results', opt.name)
+    out_dir = os.path.join(
+        '/home/awilkins/extrapolation_pix2pix/results',
+        os.path.join(os.path.basename(opt.dataroot), opt.name)
+    )
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -77,6 +80,7 @@ def main(opt):
         realB = visuals['real_B'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
         fakeB = visuals['fake_B'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
         mask = data['mask'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
+        fakeB *= mask
         realA /= opt.A_ch_scalefactors[0]
         realB /= opt.B_ch_scalefactors[0]
         fakeB /= opt.B_ch_scalefactors[0]
@@ -339,6 +343,7 @@ def main(opt):
         realB = visuals['real_B'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
         fakeB = visuals['fake_B'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
         mask = data['mask'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
+        fakeB *= mask
         realA /= opt.A_ch_scalefactors[0]
         realB /= opt.B_ch_scalefactors[0]
         fakeB /= opt.B_ch_scalefactors[0]
