@@ -29,7 +29,7 @@ def main(opt):
     best_metrics = {}
 
     with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
-        f.write("Iters per epoch: {}\n".format(len(dataset)))
+        f.write("Iters per epoch: {}\n".format(len(dataset.dataloader)))
 
     for epoch in range(opt.n_epochs + opt.n_epochs_decay):
         with open(os.path.join(opt.checkpoints_dir, opt.name, "loss.txt"), 'a') as f:
