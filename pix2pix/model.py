@@ -362,7 +362,9 @@ class Pix2pix():
     def backward_G(self):
         """Calculate GAN and L1 loss for the generator"""
         # First, G(A) should fake the discriminator
-        if not self.opt.unconditional_D:
+        if self.opt.no_D_test:
+            self.loss_G_GAN = 0.0
+        elif not self.opt.unconditional_D:
             fake_AB = torch.cat(
                 (
                     self.real_A[:, :, self.ch_slicel:self.ch_sliceh, self.t_slicel:self.t_sliceh],
@@ -371,13 +373,13 @@ class Pix2pix():
                 1
             )
             pred_fake = self.netD(fake_AB)
-
+            self.loss_G_GAN = self.criterionGAN(pred_fake, True)
         else:
             pred_fake = self.netD(
                 self.fake_B[:, :, self.ch_slicel:self.ch_sliceh, self.t_slicel:self.t_sliceh]
             )
+            self.loss_G_GAN = self.criterionGAN(pred_fake, True)
 
-        self.loss_G_GAN = self.criterionGAN(pred_fake, True)
         # Second, G(A) = B
         self.loss_G_pix, self.loss_G_channel = self.criterionCustomLoss(
             self.real_A[:, :, self.ch_slicel:self.ch_sliceh, self.t_slicel:self.t_sliceh],
@@ -392,26 +394,21 @@ class Pix2pix():
         )
 
         # combine loss and calculate gradients
-        if self.opt.no_D_test:
-            self.loss_G = (
-                self.opt.lambda_pix * self.loss_G_pix +
-                self.opt.lambda_channel * self.loss_G_channel
-            )
-        else:
-            self.loss_G = (
-                self.loss_G_GAN +
-                self.opt.lambda_pix * self.loss_G_pix +
-                self.opt.lambda_channel * self.loss_G_channel
-            )
+        self.loss_G = (
+            self.loss_G_GAN +
+            self.opt.lambda_pix * self.loss_G_pix +
+            self.opt.lambda_channel * self.loss_G_channel
+        )
         self.loss_G.backward()
 
     def optimize_parameters(self):
         self.forward() # compute fake images: G(A)
         # update D
-        self.set_requires_grad(self.netD, True) # enable backprop for D
-        self.optimizer_D.zero_grad() # set D's gradients to zero
-        self.backward_D() # calculate gradients for D
-        self.optimizer_D.step() # update D's weights
+        if not self.opt.no_D_test:
+            self.set_requires_grad(self.netD, True) # enable backprop for D
+            self.optimizer_D.zero_grad() # set D's gradients to zero
+            self.backward_D() # calculate gradients for D
+            self.optimizer_D.step() # update D's weights
         # update G
         self.set_requires_grad(self.netD, False) # D requires no gradients when optimizing G
         self.optimizer_G.zero_grad() # set G's gradients to zero
