@@ -318,6 +318,11 @@ class Pix2pix():
 
     def backward_D(self):
         """Calculate GAN loss for the discriminator"""
+        if self.opt.no_D_test:
+            self.loss_D_fake = 0.0
+            self.loss_D_real = 0.0
+            return
+
         # Fake; stop backprop to the generator by detaching fake_B
         if not self.opt.unconditional_D:
             fake_AB = torch.cat(
@@ -404,11 +409,10 @@ class Pix2pix():
     def optimize_parameters(self):
         self.forward() # compute fake images: G(A)
         # update D
-        if not self.opt.no_D_test:
-            self.set_requires_grad(self.netD, True) # enable backprop for D
-            self.optimizer_D.zero_grad() # set D's gradients to zero
-            self.backward_D() # calculate gradients for D
-            self.optimizer_D.step() # update D's weights
+        self.set_requires_grad(self.netD, True) # enable backprop for D
+        self.optimizer_D.zero_grad() # set D's gradients to zero
+        self.backward_D() # calculate gradients for D
+        self.optimizer_D.step() # update D's weights
         # update G
         self.set_requires_grad(self.netD, False) # D requires no gradients when optimizing G
         self.optimizer_G.zero_grad() # set G's gradients to zero
