@@ -30,7 +30,7 @@ checkpoints_dir: "/home/awilkins/extrapolation_pix2pix/checkpoints/thesis_infill
 ngf: 64
 ndf: 64
 netD: 'n_layers'
-no_D_test: False
+no_D_test: True
 netG: "resnet_9blocks_downres(8,8)_2"
 n_layers_D: 4
 norm: 'instance'
