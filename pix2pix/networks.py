@@ -152,7 +152,8 @@ def define_G(
         ngf (int) -- the number of filters in the last conv layer
         netG (str) -- the architecture's name:
             resnet_9blocks | resnet_9blocks_downres(4,10)_{1,2} |
-            resnet_9blocks_downres(8,8)_{1,2,3} | resnet_6blocks |
+            resnet_9blocks_downres(8,8)_{1,2,3} | resnet_6blocks | resnet_12blocks |
+            resnet_9blocks_3updownsampling | resnet_9blocks_stride3 |
             unet_256 | unet_128 | unet_256_k3 | unet_256_k3-5 | unet_256_k3-5_strides1 |
             unet_256_k3-5_strides2 | unet_256_k3_strides1
         norm (str) -- the name of normalization layers used in the network: batch | instance | none
@@ -196,6 +197,51 @@ def define_G(
             upsampling_strides=[2, 2],
             downupsampling_more_features=[True, True],
             upsampling_output_padding=[1, 1]
+        )
+
+    elif netG == 'resnet_12blocks':
+        net = ResnetGenerator(
+            input_nc, output_nc, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            n_blocks=12,
+            output_layer=output_layer,
+            padding_type=padding_type,
+            n_downsampling=2,
+            downsampling_strides=[2, 2],
+            upsampling_strides=[2, 2],
+            downupsampling_more_features=[True, True],
+            upsampling_output_padding=[1, 1]
+        )
+
+    elif netG == 'resnet_9blocks_3updownsampling':
+        net = ResnetGenerator(
+            input_nc, output_nc, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            n_blocks=9,
+            output_layer=output_layer,
+            padding_type=padding_type,
+            n_downsampling=3,
+            downsampling_strides=[2, 2, 2],
+            upsampling_strides=[2, 2, 2],
+            downupsampling_more_features=[True, True, True],
+            upsampling_output_padding=[1, 1, (1,0)]
+        )
+
+    elif netG == 'resnet_9blocks_stride3':
+        net = ResnetGenerator(
+            input_nc, output_nc, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            n_blocks=9,
+            output_layer=output_layer,
+            padding_type=padding_type,
+            n_downsampling=2,
+            downsampling_strides=[3, 3],
+            upsampling_strides=[3, 3],
+            downupsampling_more_features=[True, True],
+            upsampling_output_padding=[(2,0), (0,0)]
         )
 
     elif netG == 'resnet_6blocks':
