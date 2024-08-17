@@ -1,7 +1,7 @@
 """
 Script to make training dataset from paired ndfd hdf5 files. The ND wire projection image will
-contained a channel with an infilled flag. A signal mask made by smearing the ND input image
-will be made and added to the last channel of the FD array.
+contained a channel with an infilled flag and a reflection mask flag. A signal mask is made by
+smearing the ND input image will be made and added to the last channel of the FD array.
 """
 import os, argparse
 from collections import defaultdict
@@ -73,12 +73,12 @@ def make_signalmask(nd_pixelmap, max_tick_shift, max_ch_shift):
     return mask.astype(bool).astype(float)
 
 def make_nd_pixelmap(data, plane_shape):
-    arr = np.zeros((6, *plane_shape), dtype=float)
+    arr = np.zeros((7, *plane_shape), dtype=float)
     adc_weighted_avg_numerators = {
         "nd_drift_dist" : defaultdict(float),
         "fd_drift_dist" : defaultdict(float),
         "wire_dist" : defaultdict(float),
-        "infilled" : defaultdict(float)
+        "infilled" : defaultdict(float),
     }
 
     for i in tqdm(range(len(data))):
@@ -117,7 +117,11 @@ def make_nd_pixelmap(data, plane_shape):
                 adc_weighted_avg_numerators["infilled"][chtick] / arr[0, ch, tick]
             )
 
-        arr[3, ch, tick] += 1 # number of stacked packets in (wire, tick)
+        # Projection is from the reflection mask, dont want this included in stack
+        if data["infilled"][i] == 2:
+            arr[6, ch, tick] = 1.0
+        else:
+            arr[3, ch, tick] += 1 # number of stacked packets in (wire, tick)
 
     arr[1] = np.sqrt(arr[1])
     arr[2] = np.sqrt(arr[2])

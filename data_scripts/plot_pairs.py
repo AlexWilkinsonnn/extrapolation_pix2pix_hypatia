@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 def main(args):
     arrA = sparse.load_npz(args.nd_file).todense()
-    arrA_ch = np.ma.masked_where(arrA[0] == 0, arrA[args.nd_channel])
+    arrA_ch = np.ma.masked_where((arrA[0] == 0) & (arrA[args.nd_channel] == 0), arrA[args.nd_channel])
     arrB = np.load(args.fd_file)[0]
 
     adc_abs_max = np.max(np.abs(arrB))
@@ -22,6 +22,12 @@ def main(args):
         signalmask = np.ma.masked_where(arrA[-1] == 0, arrA[-1])
         ax[0].imshow(
             signalmask.T,
+            cmap=plt.cm.gray, alpha=0.2, aspect="auto", interpolation="none", origin="lower"
+        )
+    if args.show_infillmask:
+        infillmask = np.ma.masked_where(arrA[6] == 0, arrA[6])
+        ax[0].imshow(
+            infillmask.T,
             cmap=plt.cm.gray, alpha=0.2, aspect="auto", interpolation="none", origin="lower"
         )
     ax[0].set_title("ND")
@@ -46,7 +52,12 @@ def parse_arguments():
     parser.add_argument("fd_file", type=str)
     parser.add_argument("nd_channel", type=int)
 
-    parser.add_argument("--show_signalmask", action="store_true", help="overlay signal mask")
+    group1 = parser.add_mutually_exclusive_group()
+    group1.add_argument("--show_signalmask", action="store_true", help="overlay signal mask")
+    group1.add_argument(
+        "--show_infillmask", action="store_true",
+        help="overlay infill reflection mask (assume channel 6)"
+    )
 
     args = parser.parse_args()
 
