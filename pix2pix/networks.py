@@ -228,6 +228,21 @@ def define_G(
             downupsampling_more_features=[True, True, True],
             upsampling_output_padding=[1, 1, (1,0)]
         )
+        
+    elif netG == 'resnet_9blocks_4updownsampling':
+        net = ResnetGenerator(
+            input_nc, output_nc, ngf,
+            norm_layer=norm_layer,
+            use_dropout=use_dropout,
+            n_blocks=9,
+            output_layer=output_layer,
+            padding_type=padding_type,
+            n_downsampling=4,
+            downsampling_strides=[2, 2, 2, 2],
+            upsampling_strides=[2, 2, 2, 2],
+            downupsampling_more_features=[True, True, True, True],
+            upsampling_output_padding=[1, 1, (1,0), 1]
+        )
 
     elif netG == 'resnet_9blocks_stride3':
         net = ResnetGenerator(
