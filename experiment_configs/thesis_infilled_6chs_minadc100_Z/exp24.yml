@@ -1,4 +1,4 @@
-name: "exptest"
+name: "exp24"
 
 dataroot: "/state/partition1/awilkins/pix2pix_data/thesis_infilled_6chs_minadc100_Z"
 dataroot_shared_disk: "/share/gpu2/awilkins/pix2pix_data/thesis_infilled_6chs_minadc100_Z"
@@ -27,11 +27,11 @@ samples: -1
 gpu_id: 0
 checkpoints_dir: "/home/awilkins/extrapolation_pix2pix/checkpoints/thesis_infilled_6chs_minadc100_Z"
 
-ngf: 32
+ngf: 64
 ndf: 64
 netD: 'n_layers'
 no_D_test: True
-netG: "resnet_9blocks_4updownsampling"
+netG: "resnet_9blocks_3updownsampling"
 n_layers_D: 4
 norm: 'instance'
 init_type: 'xavier'
@@ -56,7 +56,7 @@ rms: 3.610753167639414
 
 serial_batches: False
 num_threads: 6
-batch_size : 1
+batch_size : 2
 max_dataset_size: 30000
 
 display_freq : 200

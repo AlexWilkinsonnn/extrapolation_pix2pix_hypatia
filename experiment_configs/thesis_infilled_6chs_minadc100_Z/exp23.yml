@@ -1,4 +1,4 @@
-name: "exptest"
+name: "exp23"
 
 dataroot: "/state/partition1/awilkins/pix2pix_data/thesis_infilled_6chs_minadc100_Z"
 dataroot_shared_disk: "/share/gpu2/awilkins/pix2pix_data/thesis_infilled_6chs_minadc100_Z"
@@ -56,7 +56,7 @@ rms: 3.610753167639414
 
 serial_batches: False
 num_threads: 6
-batch_size : 1
+batch_size : 10
 max_dataset_size: 30000
 
 display_freq : 200
