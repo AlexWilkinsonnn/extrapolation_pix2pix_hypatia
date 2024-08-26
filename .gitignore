@@ -8,6 +8,7 @@ depos_*
 checkpoints/nd_fd_*
 checkpoints/FHC.nogaps.*
 checkpoints/thesis_infilled_6chs_*
+checkpoints/thesis_infilled_7chs_*
 __pycache__/
 checkpoints/test/
 sample/
