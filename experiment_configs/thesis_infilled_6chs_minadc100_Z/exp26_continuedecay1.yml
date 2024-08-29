@@ -66,4 +66,4 @@ num_valid: 1000
 save_latest_freq: 9999999
 save_epoch_freq: 1
 
-load_from_epoch: "best_loss_pix"
+load_from_epoch: "/home/awilkins/extrapolation_pix2pix/checkpoints/thesis_infilled_6chs_minadc100_Z/exp26/best_loss_pix"

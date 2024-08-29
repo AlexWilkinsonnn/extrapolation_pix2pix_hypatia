@@ -25,7 +25,9 @@ def main(opt):
     print("model [%s] was created" % type(model).__name__)
     model.setup(opt)
     if hasattr(opt, "load_from_epoch"):
-        model.load_networks(opt.load_from_epoch)
+        model.load_networks(
+            os.path.dirname(opt.load_from_epoch), os.path.basename(opt.load_from_epoch)
+        )
     n_iter = 0
 
     best_metrics = {}
