@@ -26,7 +26,8 @@ def main(opt):
     model.setup(opt)
     if hasattr(opt, "load_from_epoch"):
         model.load_networks(
-            os.path.dirname(opt.load_from_epoch), os.path.basename(opt.load_from_epoch)
+            os.path.basename(opt.load_from_epoch),
+            networks_dir=os.path.dirname(opt.load_from_epoch)
         )
     n_iter = 0
 
