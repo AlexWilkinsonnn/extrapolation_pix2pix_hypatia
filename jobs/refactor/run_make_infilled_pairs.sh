@@ -14,8 +14,9 @@ INPUT_DIR=$1
 OUTPUT_DIR=$2
 SIGNAL_TYPE=$3
 MIN_ADC=$4
-SIGMASK_MAX_TICK=$5
-SIGMASK_MAX_CH=$6
+SIGMASK_MAX_TICK_POSITIVE=$5
+SIGMASK_MAX_TICK_NEGATIVE=$6
+SIGMASK_MAX_CH=$7
 
 START_IDX_STEP=100000
 
@@ -34,13 +35,17 @@ echo "Start index is ${start_idx}"
 echo "Output dir is ${OUTPUT_DIR}"
 echo "Signal type is ${SIGNAL_TYPE}"
 echo "Min ADC is ${MIN_ADC}"
+echo "Sigmask max tick positive is ${SIGMASK_MAX_TICK_POSITIVE}"
+echo "Sigmask max tick negative is ${SIGMASK_MAX_TICK_NEGATIVE}"
+echo "Sigmask max channel is ${SIGMASK_MAX_CH}"
 
 cd /home/awilkins/extrapolation_pix2pix
 source setups/setup.sh
 
 python data_scripts/make_infilled_pairs.py --min_adc $MIN_ADC \
                                            --start_idx $start_idx \
-                                           --signalmask_max_tick $SIGMASK_MAX_TICK \
+                                           --signalmask_max_tick_positive $SIGMASK_MAX_TICK_POSITIVE \
+                                           --signalmask_max_tick_negative $SIGMASK_MAX_TICK_NEGATIVE \
                                            --signalmask_max_ch $SIGMASK_MAX_CH \
                                            --batch_mode \
                                            $input_file \

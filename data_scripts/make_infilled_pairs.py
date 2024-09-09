@@ -40,12 +40,16 @@ def main(args):
 
                 fd_arr = make_fd_pixelmap(f["fd_resp"][evid][tpcset][rop][:])
                 nd_arr = make_nd_pixelmap(
-                    f["nd_packet_wire_projs"][evid][tpcset][rop], fd_arr.shape[1:]
+                    f["nd_packet_wire_projs"][evid][tpcset][rop],
+                    fd_arr.shape[1:],
+                    args.reflection_mask
                 )
                 if np.sum(nd_arr[0]) < args.min_adc:
                     continue
                 signal_mask = make_signalmask(
-                    nd_arr, args.signalmask_max_tick, args.signalmask_max_ch
+                    nd_arr,
+                    args.signalmask_max_tick_positive, args.signalmask_max_tick_negative,
+                    args.signalmask_max_ch
                 )
                 nd_arr = np.concatenate([nd_arr, np.expand_dims(signal_mask, axis=0)], 0)
 
@@ -58,12 +62,13 @@ def main(args):
 def make_fd_pixelmap(data):
     return np.expand_dims(data, axis=0).astype(float)
 
-def make_signalmask(nd_pixelmap, max_tick_shift, max_ch_shift):
+def make_signalmask(nd_pixelmap, max_tick_shift_positive, max_tick_shift_negative, max_ch_shift):
     nd_adcs = nd_pixelmap[0]
     mask = np.copy(nd_adcs)
 
-    for _ in range(1, max_tick_shift + 1):
+    for _ in range(1, max_tick_shift_positive + 1):
         mask[:, 1:] += mask[:, :-1]
+    for _ in range(1, max_tick_shift_negative + 1):
         mask[:, :-1] += mask[:, 1:]
     
     for _ in range(1, max_ch_shift + 1):
@@ -72,8 +77,8 @@ def make_signalmask(nd_pixelmap, max_tick_shift, max_ch_shift):
 
     return mask.astype(bool).astype(float)
 
-def make_nd_pixelmap(data, plane_shape):
-    arr = np.zeros((7, *plane_shape), dtype=float)
+def make_nd_pixelmap(data, plane_shape, reflection_mask):
+    arr = np.zeros((7 if reflection_mask else 6, *plane_shape), dtype=float)
     adc_weighted_avg_numerators = {
         "nd_drift_dist" : defaultdict(float),
         "fd_drift_dist" : defaultdict(float),
@@ -117,9 +122,12 @@ def make_nd_pixelmap(data, plane_shape):
                 adc_weighted_avg_numerators["infilled"][chtick] / arr[0, ch, tick]
             )
 
-        # Projection is from the reflection mask, dont want this included in stack
-        if data["infilled"][i] == 2:
-            arr[6, ch, tick] = 1.0
+        if reflection_mask:
+            # Projection is from the reflection mask, dont want this included in stack
+            if data["infilled"][i] == 2:
+                arr[6, ch, tick] = 1.0
+            else:
+                arr[3, ch, tick] += 1 # number of stacked packets in (wire, tick)
         else:
             arr[3, ch, tick] += 1 # number of stacked packets in (wire, tick)
 
@@ -147,9 +155,16 @@ def parse_arguments():
         help="number to start naming output pairs from"
     )
     parser.add_argument(
-        "--signalmask_max_tick", type=int, default=None,
+        "--signalmask_max_tick_positive", type=int, default=None,
         help=(
-            "Max ND packet smearing in tick direction to make signal mask."
+            "Max ND packet smearing in positive tick direction to make signal mask."
+            "Default 30 for Z, 50 for U|V"
+        )
+    )
+    parser.add_argument(
+        "--signalmask_max_tick_negative", type=int, default=None,
+        help=(
+            "Max ND packet smearing in negative tick direction to make signal mask."
             "Default 30 for Z, 50 for U|V"
         )
     )
@@ -161,14 +176,17 @@ def parse_arguments():
         )
     )
     parser.add_argument("--batch_mode", action="store_true")
+    parser.add_argument("--reflection_mask", action="store_true")
 
     args = parser.parse_args()
 
     if args.signal_type not in ["Z", "U", "V"]:
         raise argparse.ArgumentError(f"signal_type {args.signal_type} is not valid")
 
-    if args.signalmask_max_tick is None:
-        args.signalmask_max_tick = 30 if args.signal_type == "Z" else 50
+    if args.signalmask_max_tick_positive is None:
+        args.signalmask_max_tick_positive = 30 if args.signal_type == "Z" else 50
+    if args.signalmask_max_tick_negative is None:
+        args.signalmask_max_tick_negative = 30 if args.signal_type == "Z" else 50
     if args.signalmask_max_ch is None:
         args.signalmask_max_tick = 4
 
