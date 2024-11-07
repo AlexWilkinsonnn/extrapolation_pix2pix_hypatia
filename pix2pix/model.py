@@ -289,14 +289,15 @@ class Pix2pix():
                 for param in net.parameters():
                     param.requires_grad = requires_grad
 
-    def set_input(self, input):
+    def set_input(self, input, test=False):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
 
         Parameters:
             input (dict): include the data itself and its metadata information.
         """
         self.real_A = input['A'].to(self.device)
-        self.real_B = input['B'].to(self.device)
+        if not test:
+            self.real_B = input['B'].to(self.device)
         self.mask = (
             input['mask'].to(self.device) if self.opt.mask_type.startswith('saved') else False
         )
