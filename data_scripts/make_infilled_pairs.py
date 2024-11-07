@@ -94,6 +94,7 @@ def make_nd_pixelmap(data, plane_shape, reflection_mask):
 
         arr[0, ch, tick] += adc
 
+        # Ignoring zero adc projections here so that the reflection mask pixels are not included
         if arr[0, ch, tick]:
             nd_drift_dist = float(data["nd_drift_dist"][i])
             # Some nd drift distance are slightly -ve due to drift distance calculation weirdness
@@ -123,7 +124,7 @@ def make_nd_pixelmap(data, plane_shape, reflection_mask):
             )
 
         if reflection_mask:
-            # Projection is from the reflection mask, dont want this included in stack
+            # Projection is from the reflection mask, dont want this included in stacked channel
             if data["infilled"][i] == 2:
                 arr[6, ch, tick] = 1.0
             else:
@@ -176,7 +177,14 @@ def parse_arguments():
         )
     )
     parser.add_argument("--batch_mode", action="store_true")
-    parser.add_argument("--reflection_mask", action="store_true")
+    parser.add_argument(
+        "--reflection_mask",
+        action="store_true",
+        help=(
+            "Add a new channel that marks the pixels that fall into the reflection mask"
+            "created for the infill network"
+        )
+    )
 
     args = parser.parse_args()
 
