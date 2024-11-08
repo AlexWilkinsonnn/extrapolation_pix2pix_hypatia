@@ -26,7 +26,7 @@ def main(args):
 
     tot_evids = len(f["nd_packet_wire_projs"])
     cntr = args.start_idx
-    
+
     for i_evid, evid in enumerate(f["nd_packet_wire_projs"].keys()):
         print(f"\n----\n{i_evid} / {tot_evids}")
         for tpcset in f["nd_packet_wire_projs"][evid].keys():
@@ -70,7 +70,7 @@ def make_signalmask(nd_pixelmap, max_tick_shift_positive, max_tick_shift_negativ
         mask[:, 1:] += mask[:, :-1]
     for _ in range(1, max_tick_shift_negative + 1):
         mask[:, :-1] += mask[:, 1:]
-    
+
     for _ in range(1, max_ch_shift + 1):
         mask[1:, :] += mask[:-1, :]
         mask[:-1, :] += mask[1:, :]
@@ -78,7 +78,13 @@ def make_signalmask(nd_pixelmap, max_tick_shift_positive, max_tick_shift_negativ
     return mask.astype(bool).astype(float)
 
 def make_nd_pixelmap(data, plane_shape, reflection_mask):
-    arr = np.zeros((7 if reflection_mask else 6, *plane_shape), dtype=float)
+    # Remove projections associated with reflection mask here so dont need to worry about it in loop
+    if not reflection_mask:
+        data = data[data["infilled"] != 2]
+        arr = np.zeros((6, *plane_shape), dtype=float)
+    else:
+        arr = np.zeros((y, *plane_shape), dtype=float)
+
     adc_weighted_avg_numerators = {
         "nd_drift_dist" : defaultdict(float),
         "fd_drift_dist" : defaultdict(float),
@@ -94,7 +100,7 @@ def make_nd_pixelmap(data, plane_shape, reflection_mask):
 
         arr[0, ch, tick] += adc
 
-        # Ignoring zero adc projections here so that the reflection mask pixels are not included
+        # Ignoring zero adc projections here to not mess up any weighted average calculations
         if arr[0, ch, tick]:
             nd_drift_dist = float(data["nd_drift_dist"][i])
             # Some nd drift distance are slightly -ve due to drift distance calculation weirdness
@@ -123,12 +129,9 @@ def make_nd_pixelmap(data, plane_shape, reflection_mask):
                 adc_weighted_avg_numerators["infilled"][chtick] / arr[0, ch, tick]
             )
 
-        if reflection_mask:
-            # Projection is from the reflection mask, dont want this included in stacked channel
-            if data["infilled"][i] == 2:
-                arr[6, ch, tick] = 1.0
-            else:
-                arr[3, ch, tick] += 1 # number of stacked packets in (wire, tick)
+        # Projection is from the reflection mask, dont want this included in stacked packets channel
+        if data["infilled"][i] == 2:
+            arr[6, ch, tick] = 1.0
         else:
             arr[3, ch, tick] += 1 # number of stacked packets in (wire, tick)
 
@@ -146,7 +149,7 @@ def parse_arguments():
         help="output dir where 'allA' and allB' directories will be made a filled"
     )
     parser.add_argument("signal_type", type=str, help="Z|U|V")
-    
+
     parser.add_argument(
         "--min_adc", type=int, default=0,
         help="minimum ND adc on a readout plane to make a pair"
@@ -181,8 +184,9 @@ def parse_arguments():
         "--reflection_mask",
         action="store_true",
         help=(
-            "Add a new channel that marks the pixels that fall into the reflection mask"
-            "created for the infill network"
+            "Add a new channel that marks the pixels that fall into the reflection mask "
+            "created for the infill network. Only possible when the reflection mas was written "
+            "at the infill stages. These packets are marked with `infilled` == 2"
         )
     )
 
