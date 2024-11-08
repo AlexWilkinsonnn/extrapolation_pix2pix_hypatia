@@ -7,6 +7,8 @@ import argparse, os, time
 from collections import namedtuple
 from functools import partialmethod
 
+from matplotlib import pyplot as plt
+
 import numpy as np
 import yaml
 import h5py
@@ -182,14 +184,42 @@ def main(args):
                 pred /= opt.B_ch_scalefactors[0]
                 pred = pred.numpy().astype(int)
 
+                if args.make_plots:
+                    if not os.path.exists("validation_plots"):
+                        os.makedirs("validation_plots")
+                    _, ax = plt.subplots(1, 2, figsize=(12, 6))
+                    vmax = np.max(np.abs(nd_arr[0]))
+                    vmin = -vmax
+                    nd_arr[0][nd_arr[5] == 1] = -nd_arr[0][nd_arr[5] == 1]
+                    ax[0].imshow(
+                        np.ma.masked_where(nd_arr[0] == 0, nd_arr[0]).T,
+                        origin="lower",
+                        aspect="auto",
+                        interpolation="none",
+                        cmap="seismic",
+                        vmin=vmin, vmax=vmax
+                    )
+                    vmax = np.max(np.abs(pred))
+                    vmin = -vmax
+                    ax[1].imshow(
+                        pred.T,
+                        origin="lower",
+                        aspect="auto",
+                        interpolation="none",
+                        cmap="seismic",
+                        vmin=vmin, vmax=vmax
+                    )
+                    plt.savefig(os.path.join("validation_plots", f"{evid}-{tpcset}-{rop}.pdf"))
+                    plt.close()
+
                 f_out.create_dataset(
-                    "/pred_fd_resps/" + evid + tpcset + rop,
+                    "/pred_fd_resps/" + evid + "/" + tpcset + "/" + rop,
                     data=pred, compression="gzip", compression_opts=9
                 )
 
     end = time.time()
     delta = end - start
-    print(f"Finished in {delta / 60**2:.3f} hrs, average {delta / 60:.3f} mins per event")
+    print(f"Finished in {delta / 60**2:.3f} hrs, average {delta / tot_evids:.3f} s per event")
 
     f_out.close()
     f_in.close()
@@ -260,6 +290,11 @@ def parse_arguments():
         "--drop_projs", action="store_true",
         help="Drop the 'nd_packet_wire_projs' group from the output hdf5"
     )
+
+    parser.add_argument(
+        "--make_plots", action="store_true",
+        help="Save validation plots to validation_plots/"
+        )
 
     args = parser.parse_args()
 
