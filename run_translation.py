@@ -3,7 +3,7 @@ Run the detector response translation on infilled ND packet projections for each
 This is part of the detector response translation workflow using the paired hdf5 files.
 NOTE It is assumed that some features, like the ch and t slice options, are not used.
 """
-import argparse, os, sys
+import argparse, os, time
 from collections import namedtuple
 from functools import partialmethod
 
@@ -74,9 +74,10 @@ def get_h5_files(input_file, output_file, drop_3d, drop_projs):
                     keys += find_h5_keys(val)
                 else:
                     keys += (val.name,)
+        elif isinstance(h5_obj, h5py.Dataset):
+            keys += (h5_obj.name,)
         return keys
-    dataset_keys = find_h5_keys(f_out["/"])
-    print(dataset_keys)
+    dataset_keys = find_h5_keys(f_in["/"])
 
     # Copy over data to new h5
     for key in dataset_keys:
@@ -122,32 +123,30 @@ def prep_model_input(opt, nd_arr, signal_mask):
         nd_arr[i] *= opt.A_ch_scalefactors[i]
     A = torch.from_numpy(nd_arr).float()
     mask = torch.from_numpy(np.expand_dims(signal_mask, axis=0)[:, :, :]).float()
-    print(A.shape)
-    print(mask.shape)
 
     # Give batch dimension
     A = A.unsqueeze(0)
     mask = mask.unsqueeze(0)
     A = A.to(DEVICE)
     mask = mask.to(DEVICE)
-    print(A.shape)
-    print(mask.shape)
 
     # Return in same format as the dataloader
     return {"A" : A, "A_paths" : "null", "B_path" : "null", "mask" : mask }
 
 def main(args):
-    opt_Z = get_options(args.confif_Z, args.epoch_Z)
-    opt_U = get_options(args.confif_U, args.epoch_U)
-    opt_V = get_options(args.confif_V, args.epoch_V)
-    opts = { "Z" : opt_Z, "U" : opt_Z, "opt_U" : opt_U }
+    opt_Z = get_options(args.config_Z, args.epoch_Z)
+    opt_U = get_options(args.config_U, args.epoch_U)
+    opt_V = get_options(args.config_V, args.epoch_V)
+    opts = { "Z" : opt_Z, "U" : opt_U, "V" : opt_V }
 
     model_Z = get_model(opt_Z)
     model_U = get_model(opt_U)
     model_V = get_model(opt_V)
-    models = { "Z" : model_Z, "U" : model_Z, "model_U" : model_U }
+    models = { "Z" : model_Z, "U" : model_U, "V" : model_V }
 
     f_in, f_out = get_h5_files(args.input_file, args.output_file, args.drop_3d, args.drop_projs)
+
+    start = time.time()
 
     tot_evids = len(f_in["nd_packet_wire_projs"])
     for i_evid, evid in enumerate(f_in["nd_packet_wire_projs"].keys()):
@@ -182,9 +181,18 @@ def main(args):
                 pred = pred[0][0] # remove batch and adc channel dimensions
                 pred /= opt.B_ch_scalefactors[0]
                 pred = pred.numpy().astype(int)
-                print(pred.shape)
 
-                f_out.create_dataset("/pred_fd_resps/" + evid + tpcset + rop, data=pred)
+                f_out.create_dataset(
+                    "/pred_fd_resps/" + evid + tpcset + rop,
+                    data=pred, compression="gzip", compression_opts=9
+                )
+
+    end = time.time()
+    delta = end - start
+    print(f"Finished in {delta / 60**2:.3f} hrs, average {delta / 60:.3f} mins per event")
+
+    f_out.close()
+    f_in.close()
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -197,7 +205,6 @@ def parse_arguments():
     parser.add_argument("epoch_U", type=str, help="Epoch of saved model for U plane")
     parser.add_argument("config_V", type=str, help="Experiment config yaml for V plane model")
     parser.add_argument("epoch_V", type=str, help="Epoch of saved model for V plane")
-    parser.add_argument("cache_dir", type=str, help="Dir to use as temporary disk space")
 
     parser.add_argument(
         "--signalmask_max_tick_positive_Z",
@@ -259,6 +266,8 @@ def parse_arguments():
     return args
 
 if __name__ == '__main__':
+    tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
+
     args = parse_arguments()
     main(args)
 

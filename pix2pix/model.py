@@ -170,9 +170,8 @@ class Pix2pix():
         visual_ret = OrderedDict()
         for name in self.visual_names:
             if isinstance(name, str):
-                # Sometimes I just want to use the model to store the data for other uses so might
-                # not have fake_B
-                if name == 'fake_B':
+                # Sometimes wont have fake or real B
+                if name == 'fake_B' or name == 'real_B':
                     try:
                         visual_ret[name] = getattr(self, name)
                     except:
