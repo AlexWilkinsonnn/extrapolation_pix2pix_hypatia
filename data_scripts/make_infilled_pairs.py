@@ -83,7 +83,7 @@ def make_nd_pixelmap(data, plane_shape, reflection_mask):
         data = data[data["infilled"] != 2]
         arr = np.zeros((6, *plane_shape), dtype=float)
     else:
-        arr = np.zeros((y, *plane_shape), dtype=float)
+        arr = np.zeros((7, *plane_shape), dtype=float)
 
     adc_weighted_avg_numerators = {
         "nd_drift_dist" : defaultdict(float),
