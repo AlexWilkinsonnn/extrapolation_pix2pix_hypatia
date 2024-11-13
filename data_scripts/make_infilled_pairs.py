@@ -64,7 +64,7 @@ def make_fd_pixelmap(data):
 
 def make_signalmask(nd_pixelmap, max_tick_shift_positive, max_tick_shift_negative, max_ch_shift):
     nd_adcs = nd_pixelmap[0]
-    mask = np.copy(nd_adcs)
+    mask = np.copy(nd_adcs.astype(bool))
 
     for _ in range(1, max_tick_shift_positive + 1):
         mask[:, 1:] += mask[:, :-1]
@@ -75,7 +75,7 @@ def make_signalmask(nd_pixelmap, max_tick_shift_positive, max_tick_shift_negativ
         mask[1:, :] += mask[:-1, :]
         mask[:-1, :] += mask[1:, :]
 
-    return mask.astype(bool).astype(float)
+    return mask.astype(float)
 
 def make_nd_pixelmap(data, plane_shape, reflection_mask):
     # Remove projections associated with reflection mask here so dont need to worry about it in loop
