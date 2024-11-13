@@ -168,6 +168,7 @@ def main(args):
     tot_evids = len(f_in["nd_packet_wire_projs"])
     for i_evid, evid in enumerate(f_in["nd_packet_wire_projs"].keys()):
         print(f"{i_evid} / {tot_evids}")
+        t_pms, t_smasks, t_infs, t_outs, t_thres, t_writes = [], [], [], [], [], []
         for tpcset in f_in["nd_packet_wire_projs"][evid].keys():
             for rop in f_in["nd_packet_wire_projs"][evid][tpcset].keys():
                 ret = get_plane_data(rop, args)
@@ -179,18 +180,25 @@ def main(args):
                 opt = opts[signal_type]
                 model = models[signal_type]
 
+                t_0 = time.time()
                 nd_arr = make_nd_pixelmap(
                     f_in["nd_packet_wire_projs"][evid][tpcset][rop], plane_shape, False
                 )
+                t_pms.append(time.time() - t_0)
+                t_0 = time.time()
                 signal_mask = make_signalmask(
                     nd_arr,
                     signalmask_max_tick_positive, signalmask_max_tick_negative, signalmask_max_ch
                 )
+                t_smasks.append(time.time() - t_0)
+                t_0 = time.time()
 
                 input_data = prep_model_input(opt, nd_arr, signal_mask)
 
                 model.set_input(input_data, test=True)
                 model.test()
+                t_infs.append(time.time() - t_0)
+                t_0 = time.time()
 
                 vis = model.get_current_visuals()
                 pred = vis["fake_B"].cpu()
@@ -199,6 +207,8 @@ def main(args):
                 pred = pred[0][0] # remove batch and adc channel dimensions
                 pred /= opt.B_ch_scalefactors[0]
                 pred = pred.numpy().astype(int)
+                t_outs.append(time.time() - t_0)
+                t_0 = time.time()
 
                 # Trying to zero out regions that are probably noise. Found this is especially
                 # important for the induction plane models where there are long tails of very low
@@ -209,6 +219,8 @@ def main(args):
                 if threshold_val is not None:
                     threshold_mask = make_threshold_mask(pred, threshold_val)
                     pred *= threshold_mask
+                t_thres.append(time.time() - t_0)
+                t_0 = time.time()
 
                 if args.make_plots:
                     if not os.path.exists("validation_plots"):
@@ -242,6 +254,15 @@ def main(args):
                     "/pred_fd_resps/" + evid + "/" + tpcset + "/" + rop,
                     data=pred, compression="gzip", compression_opts=9
                 )
+                t_writes.append(time.time() - t_0)
+        # print(f"pixelmap = {np.sum(t_pms):.2f}s")
+        # print(f"signalmask = {np.sum(t_smasks):.2f}s")
+        # print(f"inference = {np.sum(t_infs):.2f}s")
+        # print(f"output = {np.sum(t_outs):.2f}s")
+        # print(f"threshold = {np.sum(t_thres):.2f}s")
+        # print(f"write = {np.sum(t_writes):.2f}s")
+        # print(f"total = {np.sum(t_pms + t_smasks + t_infs + t_outs + t_thres + t_writes)}s")
+        # print("-------")
 
     end = time.time()
     delta = end - start
