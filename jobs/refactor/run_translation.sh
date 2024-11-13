@@ -47,6 +47,9 @@ python run_translation.py --signalmask_max_tick_positive_Z 30 \
                           --signalmask_max_tick_positive_V 100 \
                           --signalmask_max_tick_negative_V 75 \
                           --signalmask_max_ch_V 8 \
+                          --threshold_mask_Z 10 \
+                          --threshold_mask_U 10 \
+                          --threshold_mask_V 10 \
                           --drop_3d \
                           --drop_projs \
                           ${input_file} \

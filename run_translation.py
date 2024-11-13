@@ -100,7 +100,8 @@ def get_plane_data(rop, args):
             (480, TICK_WINDOW),
             args.signalmask_max_tick_negative_Z,
             args.signalmask_max_tick_positive_Z,
-            args.signalmask_max_ch_Z
+            args.signalmask_max_ch_Z,
+            args.threshold_mask_Z
         )
     if rop == "1":
         return (
@@ -108,7 +109,8 @@ def get_plane_data(rop, args):
             (800, TICK_WINDOW),
             args.signalmask_max_tick_negative_U,
             args.signalmask_max_tick_positive_U,
-            args.signalmask_max_ch_U
+            args.signalmask_max_ch_U,
+            args.threshold_mask_U
         )
     if rop == "0":
         return (
@@ -116,7 +118,8 @@ def get_plane_data(rop, args):
             (800, TICK_WINDOW),
             args.signalmask_max_tick_negative_V,
             args.signalmask_max_tick_positive_V,
-            args.signalmask_max_ch_V
+            args.signalmask_max_ch_V,
+            args.threshold_mask_V
         )
 
 def prep_model_input(opt, nd_arr, signal_mask):
@@ -134,6 +137,18 @@ def prep_model_input(opt, nd_arr, signal_mask):
 
     # Return in same format as the dataloader
     return {"A" : A, "A_paths" : "null", "B_path" : "null", "mask" : mask }
+
+def make_threshold_mask(pred_arr, threshold_val):
+    mask = np.abs(pred_arr)
+    mask *= (mask > threshold_val)
+    # Smear a bit to let signal ADC drop gracefully
+    for _ in range(1, 6 + 1): # Smear by 5 ticks
+        mask[:, 1:] += mask[:, :-1]
+        mask[:, :-1] += mask[:, 1:]
+    for _ in range(1, 1 + 1): # Smear by one channel
+        mask[1:, :] += mask[:-1, :]
+        mask[:-1, :] += mask[1:, :]
+    return mask.astype(bool).astype(int)
 
 def main(args):
     opt_Z = get_options(args.config_Z, args.epoch_Z)
@@ -160,6 +175,7 @@ def main(args):
                 plane_shape = ret[1]
                 signalmask_max_tick_negative, signalmask_max_tick_positive = ret[2], ret[3]
                 signalmask_max_ch = ret[4]
+                threshold_val = ret[5]
                 opt = opts[signal_type]
                 model = models[signal_type]
 
@@ -183,6 +199,16 @@ def main(args):
                 pred = pred[0][0] # remove batch and adc channel dimensions
                 pred /= opt.B_ch_scalefactors[0]
                 pred = pred.numpy().astype(int)
+
+                # Trying to zero out regions that are probably noise. Found this is especially
+                # important for the induction plane models where there are long tails of very low
+                # ADC that confuse the signal processing and produce very wide hits. I think the
+                # signal processing is expecting the signal to cross zero at some point. The
+                # tanh at the end of the induction plane models makes generating a zero difficult,
+                # unlike the collection plane models.
+                if threshold_val is not None:
+                    threshold_mask = make_threshold_mask(pred, threshold_val)
+                    pred *= threshold_mask
 
                 if args.make_plots:
                     if not os.path.exists("validation_plots"):
@@ -294,7 +320,20 @@ def parse_arguments():
     parser.add_argument(
         "--make_plots", action="store_true",
         help="Save validation plots to validation_plots/"
-        )
+    )
+
+    parser.add_argument(
+        "--threshold_mask_Z", type=int, default=None,
+        help="Set ADCs below this threshold to zero (with small amount of smearing)"
+    )
+    parser.add_argument(
+        "--threshold_mask_U", type=int, default=None,
+        help="Set ADCs below this threshold to zero (with small amount of smearing)"
+    )
+    parser.add_argument(
+        "--threshold_mask_V", type=int, default=None,
+        help="Set ADCs below this threshold to zero (with small amount of smearing)"
+    )
 
     args = parser.parse_args()
 
