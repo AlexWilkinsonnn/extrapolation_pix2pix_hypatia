@@ -252,7 +252,7 @@ def main(args):
 
                 f_out.create_dataset(
                     "/pred_fd_resps/" + evid + "/" + tpcset + "/" + rop,
-                    data=pred, compression="gzip", compression_opts=9
+                    data=pred, compression="gzip", compression_opts=6
                 )
                 t_writes.append(time.time() - t_0)
         # print(f"pixelmap = {np.sum(t_pms):.2f}s")
