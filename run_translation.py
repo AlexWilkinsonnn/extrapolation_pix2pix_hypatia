@@ -172,8 +172,6 @@ def main(args):
     tot_evids = len(f_in["nd_packet_wire_projs"])
     for i_evid, evid in enumerate(f_in["nd_packet_wire_projs"].keys()):
         print(f"{i_evid} / {tot_evids}")
-        if i_evid >= 5:
-            break
         t_pms, t_smasks, t_infs, t_outs, t_thres, t_writes = [], [], [], [], [], []
         for tpcset in f_in["nd_packet_wire_projs"][evid].keys():
             for rop in f_in["nd_packet_wire_projs"][evid][tpcset].keys():
