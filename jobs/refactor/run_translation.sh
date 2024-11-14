@@ -50,6 +50,7 @@ python run_translation.py --signalmask_max_tick_positive_Z 30 \
                           --threshold_mask_Z 10 \
                           --threshold_mask_U 10 \
                           --threshold_mask_V 10 \
+                          --add_noise_from bin/FDPlanesNoiseExample.h5 \
                           --drop_3d \
                           --drop_projs \
                           ${input_file} \

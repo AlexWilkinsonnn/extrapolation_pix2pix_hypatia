@@ -47,6 +47,10 @@ python run_translation.py --signalmask_max_tick_positive_Z 30 \
                           --signalmask_max_tick_positive_V 100 \
                           --signalmask_max_tick_negative_V 75 \
                           --signalmask_max_ch_V 8 \
+                          --threshold_mask_Z 10 \
+                          --threshold_mask_U 10 \
+                          --threshold_mask_V 10 \
+                          --add_noise_from bin/FDPlanesNoiseExample.h5 \
                           ${input_file} \
                           ${output_file} \
                           checkpoints/thesis_infilled_6chs_minadc100_Z/exp26_continue1decay1final/config.yaml \
