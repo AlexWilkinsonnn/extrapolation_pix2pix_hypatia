@@ -105,7 +105,7 @@ def get_plane_data(rop, args):
         )
     if rop == "1":
         return (
-            "U",
+            "V",
             (800, TICK_WINDOW),
             args.signalmask_max_tick_negative_U,
             args.signalmask_max_tick_positive_U,
@@ -114,7 +114,7 @@ def get_plane_data(rop, args):
         )
     if rop == "0":
         return (
-            "V",
+            "U",
             (800, TICK_WINDOW),
             args.signalmask_max_tick_negative_V,
             args.signalmask_max_tick_positive_V,
@@ -161,6 +161,10 @@ def main(args):
     model_V = get_model(opt_V)
     models = { "Z" : model_Z, "U" : model_U, "V" : model_V }
 
+    if args.add_noise_from is not None:
+        f_noise = h5py.File(args.add_noise_from)
+        noises = { "U" : np.array(f_noise["noises/U"]), "V" : np.array(f_noise["noises/V"]) }
+
     f_in, f_out = get_h5_files(args.input_file, args.output_file, args.drop_3d, args.drop_projs)
 
     start = time.time()
@@ -168,6 +172,8 @@ def main(args):
     tot_evids = len(f_in["nd_packet_wire_projs"])
     for i_evid, evid in enumerate(f_in["nd_packet_wire_projs"].keys()):
         print(f"{i_evid} / {tot_evids}")
+        if i_evid >= 5:
+            break
         t_pms, t_smasks, t_infs, t_outs, t_thres, t_writes = [], [], [], [], [], []
         for tpcset in f_in["nd_packet_wire_projs"][evid].keys():
             for rop in f_in["nd_packet_wire_projs"][evid][tpcset].keys():
@@ -219,6 +225,10 @@ def main(args):
                 if threshold_val is not None:
                     threshold_mask = make_threshold_mask(pred, threshold_val)
                     pred *= threshold_mask
+                    if signal_type == "U" or signal_type == "V":
+                        noise = noises[signal_type]
+                        noise *= (~(threshold_mask.astype(bool))).astype(int)
+                        pred += noise.astype(int)
                 t_thres.append(time.time() - t_0)
                 t_0 = time.time()
 
@@ -356,7 +366,28 @@ def parse_arguments():
         help="Set ADCs below this threshold to zero (with small amount of smearing)"
     )
 
+    parser.add_argument(
+        "--add_noise_from", type=str, default=None,
+        help=(
+            "Fill the empty non-signal regions of U and V planes with noise taken from a h5 file"
+            "that contains a dump of the larsoft detsim. This is done because the"
+            "signal processing can get very confused on the induction planes without some level"
+            "of noise (producing very wide hits before the formation of pulses). It must only be"
+            "applied to the signal region (defined with the threshold mask) or else the signal"
+            "processing will still get confused."
+        )
+    )
+
     args = parser.parse_args()
+
+    if (
+        args.add_noise_from is not None and
+        (args.threshold_mask_U is None or args.threshold_mask_V is None)
+    ):
+        raise ValueError(
+            "--add_noise_from required --threshold_mask_U and --threshold_mask_V."
+            "The threshold mask is required to define non-signal areas to add the noise to."
+        )
 
     return args
 
