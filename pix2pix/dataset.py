@@ -10,7 +10,7 @@ class Dataset():
     """
     A dataset class for paired image dataset. Either aligned or unaligned.
     """
-    def __init__(self, opt, valid=False, nd_ped=False):
+    def __init__(self, opt, valid=False, test=False, nd_ped=False):
         """Initialize this dataset class.
 
         Parameters:
@@ -19,13 +19,17 @@ class Dataset():
         self.opt = opt
         self.root = opt.dataroot
 
-        if not valid:
+        if not valid and not test:
             self.dir_A = os.path.join(opt.dataroot, "trainA")
             self.dir_B = os.path.join(opt.dataroot, "trainB")
 
-        else:
+        elif valid:
             self.dir_A = os.path.join(opt.dataroot, 'validA')
             self.dir_B = os.path.join(opt.dataroot, 'validB')
+
+        elif test:
+            self.dir_A = os.path.join(opt.dataroot, 'testA')
+            self.dir_B = os.path.join(opt.dataroot, 'testB')
 
         self.A_paths = sorted(self._make_dataset(self.dir_A, opt.max_dataset_size))
         self.B_paths = sorted(self._make_dataset(self.dir_B, opt.max_dataset_size))
@@ -144,16 +148,16 @@ class Dataset():
 
 class CustomDatasetDataLoader():
     """Wrapper class of Dataset class that performs multi-threaded data loading"""
-    def __init__(self, opt, valid=False, nd_ped=False):
+    def __init__(self, opt, valid=False, test=False, nd_ped=False):
         """Initialize this class
 
         Step 1: create a dataset instance given the name [dataset_mode]
         Step 2: create a multi-threaded data loader.
         """
         self.opt = opt
-        self.dataset = Dataset(opt, valid, nd_ped)
+        self.dataset = Dataset(opt, valid, test, nd_ped)
         print("dataset [%s] was created" % type(self.dataset).__name__)
-        if not valid:
+        if not valid and not test:
             self.dataloader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=opt.batch_size,
@@ -167,6 +171,7 @@ class CustomDatasetDataLoader():
                 shuffle=False,
                 num_workers=0
             )
+
 
     def load_data(self):
         return self
