@@ -15,7 +15,8 @@ from pix2pix.dataset import CustomDatasetDataLoader
 from pix2pix.losses import CustomLoss
 
 OCCUPIED_THRESHOLD = 20
-INDUCTION = False
+INDUCTION = True
+NOISE_ONLY = False
 
 def main(opt):
     out_dir = os.path.join(
@@ -46,6 +47,7 @@ def main(opt):
 
     losses_pix, losses_channel = [], []
     purities, completenesses = [], []
+    channel_adc_diffs_pos, channel_adc_diffs_neg = [], []
     channel_adc_diffs, channel_occupied_diffs = [], []
     event_adc_diffs, event_occupied_diffs = [], []
 
@@ -63,8 +65,55 @@ def main(opt):
     if test_sample:
         name_bias = 'test_sample_' + name_bias
 
+    if NOISE_ONLY:
+        noise_mae = []
+        dataset_test_iter = iter(dataset_test)
+        data_curr = next(dataset_test_iter)
+        for i in range(999999):
+            # if i == 500:
+            #     break
+
+            if (i % 1000 == 0):
+                print(i)
+
+            try:
+                data_next = next(dataset_test_iter)
+            except StopIteration:
+                break
+
+            model.set_input(data_curr)
+            visuals_curr = model.get_current_visuals()
+            realB_curr = visuals_curr['real_B'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
+            mask_curr = data_curr['mask'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
+            realB_curr /= opt.B_ch_scalefactors[0]
+
+            model.set_input(data_next)
+            visuals_next = model.get_current_visuals()
+            realB_next = visuals_next['real_B'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
+            mask_next = data_next['mask'].cpu()[:, :, ch_slicel:ch_sliceh, t_slicel:t_sliceh]
+            realB_next /= opt.B_ch_scalefactors[0]
+
+            mask_both = ~(mask_curr.bool()) * ~(mask_next.bool())
+
+            loss_pix, _ = CustomLoss(
+                None, realB_curr.float(), realB_next.float(),
+                mask_both.float(),
+                opt.B_ch_scalefactors[0],
+                opt.mask_type,
+                opt.nonzero_L1weight,
+                opt.rms
+            )
+            noise_mae.append(loss_pix)
+
+            data_curr = data_next
+
+        print(np.mean(noise_mae))
+        np.save(os.path.join(out_dir, f"thesis_plots/noise_losses_pix.npy"),noise_mae)
+
+        return
+
     for i, data in enumerate(dataset_test):
-        # if i == 100:
+        # if i == 500:
         #     break
 
         if (i % 1000 == 0):
@@ -93,25 +142,61 @@ def main(opt):
         losses_pix.append(loss_pix)
         losses_channel.append(loss_channel)
 
+        continue # XXX
+
         realA_infill = realA[0][5]
         realA = realA[0][0]
         realB = realB[0][0]
         fakeB = fakeB[0][0]
 
         if INDUCTION:
-            raise NotImplementedError
+            realB *= mask[0][0]
+
+            for ch in range(len(realB)):
+                if not torch.any(realB[ch]):
+                    continue
+
+                true_sum_pos = torch.sum(realB[ch] * (realB[ch] >= 0)).item()
+                pred_sum_pos = torch.sum(fakeB[ch] * (fakeB[ch] >= 0)).item()
+                if pred_sum_pos == true_sum_pos:
+                    channel_adc_diffs_pos.append(0.0)
+                else:
+                    if true_sum_pos == 0.0:
+                        true_sum_pos = 1.0
+                    channel_adc_diffs_pos.append((true_sum_pos - pred_sum_pos) / true_sum_pos)
+                true_sum_neg = torch.sum(realB[ch] * (realB[ch] < 0)).item()
+                pred_sum_neg = torch.sum(fakeB[ch] * (fakeB[ch] < 0)).item()
+                if pred_sum_neg == true_sum_neg:
+                    channel_adc_diffs_neg.append(0.0)
+                else:
+                    if true_sum_neg == 0.0:
+                        true_sum_neg = 1.0
+                    channel_adc_diffs_neg.append((true_sum_neg - pred_sum_neg) / true_sum_neg)
         else:
             realB *= mask[0][0]
 
-            true_occupied = (realB > OCCUPIED_THRESHOLD)
-            pred_occupied = (fakeB > OCCUPIED_THRESHOLD)
-            tp = torch.sum(true_occupied * pred_occupied).item()
-            fp = torch.sum(~true_occupied * pred_occupied).item()
-            fn = torch.sum(true_occupied * ~pred_occupied).item()
-            purities.append(tp / (tp + fp))
-            completenesses.append(tp / (tp + fn))
+            # true_occupied = (realB > OCCUPIED_THRESHOLD)
+            # pred_occupied = (fakeB > OCCUPIED_THRESHOLD)
+            # tp = torch.sum(true_occupied * pred_occupied).item()
+            # fp = torch.sum(~true_occupied * pred_occupied).item()
+            # fn = torch.sum(true_occupied * ~pred_occupied).item()
+            # if tp == 0:
+            #     if fp == 0:
+            #         purities.append(1.0)
+            #     else:
+            #         purities.append(0.0)
+            #     if fn == 0:
+            #         completenesses.append(1.0)
+            #     else:
+            #         completenesses.append(0.0)
+            # else:
+            #     purities.append(tp / (tp + fp))
+            #     completenesses.append(tp / (tp + fn))
 
             for ch in range(len(realB)):
+                if not torch.any(realB[ch]):
+                    continue
+
                 true_sum, pred_sum = torch.sum(realB[ch]).item(), torch.sum(fakeB[ch]).item()
                 if pred_sum == true_sum:
                     channel_adc_diffs.append(0.0)
@@ -119,28 +204,28 @@ def main(opt):
                     if true_sum == 0.0:
                         true_sum = 1.0
                     channel_adc_diffs.append((true_sum - pred_sum) / true_sum)
-                true_sum, pred_sum = torch.sum(true_occupied[ch]).item(), torch.sum(pred_occupied[ch]).item()
-                if pred_sum == true_sum:
-                    channel_occupied_diffs.append(0.0)
-                else:
-                    if true_sum == 0:
-                        true_sum = 1
-                    channel_occupied_diffs.append((true_sum - pred_sum) / true_sum)
+                # true_sum, pred_sum = torch.sum(true_occupied[ch]).item(), torch.sum(pred_occupied[ch]).item()
+                # if pred_sum == true_sum:
+                #     channel_occupied_diffs.append(0.0)
+                # else:
+                #     if true_sum == 0:
+                #         true_sum = 1
+                #     channel_occupied_diffs.append((true_sum - pred_sum) / true_sum)
 
-            true_sum, pred_sum = torch.sum(realB).item(), torch.sum(fakeB).item()
-            if true_sum == pred_sum:
-                event_adc_diffs.append(0.0)
-            else:
-                if true_sum == 0.0:
-                    true_sum = 1.0
-                event_adc_diffs.append((true_sum - pred_sum) / true_sum)
-            true_sum, pred_sum = torch.sum(true_occupied).item(), torch.sum(pred_occupied).item()
-            if true_sum == pred_sum:
-                event_occupied_diffs.append(0.0)
-            else:
-                if true_sum == 0:
-                    true_sum = 1
-                event_occupied_diffs.append((true_sum - pred_sum) / true_sum)
+            # true_sum, pred_sum = torch.sum(realB).item(), torch.sum(fakeB).item()
+            # if true_sum == pred_sum:
+            #     event_adc_diffs.append(0.0)
+            # else:
+            #     if true_sum == 0.0:
+            #         true_sum = 1.0
+            #     event_adc_diffs.append((true_sum - pred_sum) / true_sum)
+            # true_sum, pred_sum = torch.sum(true_occupied).item(), torch.sum(pred_occupied).item()
+            # if true_sum == pred_sum:
+            #     event_occupied_diffs.append(0.0)
+            # else:
+            #     if true_sum == 0:
+            #         true_sum = 1
+            #     event_occupied_diffs.append((true_sum - pred_sum) / true_sum)
 
         if i < 20:
             np.save(os.path.join(out_dir, f"thesis_plots/{i}_nd_infill.npy"), realA_infill)
@@ -150,21 +235,27 @@ def main(opt):
 
     print(np.mean(losses_pix))
     print(np.mean(losses_channel))
-    print(np.mean(purities))
-    print(np.mean(completenesses))
+    # print(np.mean(purities))
+    # print(np.mean(completenesses))
     print(np.mean(channel_adc_diffs), np.median(channel_adc_diffs))
-    print(np.mean(channel_occupied_diffs), np.median(channel_occupied_diffs))
-    print(np.mean(event_adc_diffs), np.median(event_adc_diffs))
-    print(np.mean(event_occupied_diffs), np.median(event_occupied_diffs))
+    if INDUCTION:
+        print(np.mean(channel_adc_diffs_pos), np.median(channel_adc_diffs_pos))
+        print(np.mean(channel_adc_diffs_neg), np.median(channel_adc_diffs_neg))
+    # print(np.mean(channel_occupied_diffs), np.median(channel_occupied_diffs))
+    # print(np.mean(event_adc_diffs), np.median(event_adc_diffs))
+    # print(np.mean(event_occupied_diffs), np.median(event_occupied_diffs))
 
     np.save(os.path.join(out_dir, f"thesis_plots/losses_pix.npy"), losses_pix)
     np.save(os.path.join(out_dir, f"thesis_plots/losses_channel.npy"), losses_channel)
-    np.save(os.path.join(out_dir, f"thesis_plots/purities.npy"), purities)
-    np.save(os.path.join(out_dir, f"thesis_plots/completenesses.npy"), completenesses)
+    # np.save(os.path.join(out_dir, f"thesis_plots/purities.npy"), purities)
+    # np.save(os.path.join(out_dir, f"thesis_plots/completenesses.npy"), completenesses)
     np.save(os.path.join(out_dir, f"thesis_plots/channel_adc_diffs.npy"), channel_adc_diffs)
-    np.save(os.path.join(out_dir, f"thesis_plots/channel_occupied_diffs.npy"), channel_occupied_diffs)
-    np.save(os.path.join(out_dir, f"thesis_plots/event_adc_diffs.npy"), event_adc_diffs)
-    np.save(os.path.join(out_dir, f"thesis_plots/event_occupied_diffs.npy"), event_occupied_diffs)
+    if INDUCTION:
+        np.save(os.path.join(out_dir, f"thesis_plots/channel_adc_diffs_pos.npy"), channel_adc_diffs_pos)
+        np.save(os.path.join(out_dir, f"thesis_plots/channel_adc_diffs_neg.npy"), channel_adc_diffs_neg)
+    # np.save(os.path.join(out_dir, f"thesis_plots/channel_occupied_diffs.npy"), channel_occupied_diffs)
+    # np.save(os.path.join(out_dir, f"thesis_plots/event_adc_diffs.npy"), event_adc_diffs)
+    # np.save(os.path.join(out_dir, f"thesis_plots/event_occupied_diffs.npy"), event_occupied_diffs)
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
